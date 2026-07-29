@@ -1,0 +1,25 @@
+{
+  "name": "XTS Tournament",
+  "short_name": "XTS Tour",
+  "description": "Free Fire BR, Clash Squad ও 1v1 টুর্নামেন্টে জয়েন করুন",
+  "start_url": "/xts-tournament/#/",
+  "scope": "/xts-tournament/",
+  "display": "standalone",
+  "background_color": "#0b0e14",
+  "theme_color": "#22c55e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/xts-tournament/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/xts-tournament/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
