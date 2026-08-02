@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // প্রতিটি ব্যবহারকারী শুধু নিজের user document পড়তে/লিখতে পারবে
+    // walletBalance client থেকে সরাসরি বাড়ানো যাবে না (শুধু transaction এর মাধ্যমে entry join করার সময় কমতে পারবে)
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId
+                    && request.resource.data.walletBalance <= resource.data.walletBalance;
+      // walletBalance বাড়ানো শুধু admin (Firebase Console / Cloud Function) থেকেই করা উচিত
+    }
+
+    // Tournament তালিকা সবাই পড়তে পারবে, লেখা শুধু admin (Firebase Console থেকে) করবে
+    match /tournaments/{tid} {
+      allow read: if true;
+      allow write: if false; // Console থেকে manually manage করুন, অথবা admin SDK ব্যবহার করুন
+    }
+
+    // ব্যবহারকারী নিজের entry তৈরি ও পড়তে পারবে
+    match /entries/{eid} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if false;
+    }
+
+    // Add Money / Withdraw request — ব্যবহারকারী তৈরি ও নিজেরটা পড়তে পারবে, status change শুধু admin করবে
+    match /walletRequests/{rid} {
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if false;
+    }
+  }
+}

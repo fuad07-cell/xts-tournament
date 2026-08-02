@@ -1,0 +1,359 @@
+/* CategoryPage.css — scoped, additive styles for /category/:slug.
+   Reuses your existing global classes (.screen, .section-title, .join-btn,
+   .empty, .glyph) so it stays visually consistent with the rest of the app;
+   only NEW elements introduced by this page get their own rules below. */
+
+.cp-page-enter {
+  animation: cpFadeSlideIn 0.35s ease both;
+}
+
+@keyframes cpFadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cp-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e6e9f0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-bottom: 14px;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.cp-back-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateX(-2px);
+}
+
+.cp-hero {
+  position: relative;
+  height: 200px;
+  border-radius: 18px;
+  background-color: #10131c;
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+  margin-bottom: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cp-hero-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 18px 20px;
+  background: linear-gradient(180deg, rgba(10, 12, 18, 0.15) 0%, rgba(8, 10, 16, 0.92) 100%);
+}
+
+.cp-hero-badge {
+  align-self: flex-start;
+  background: #22c55e;
+  color: #06170c;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.cp-hero-overlay h1 {
+  margin: 0 0 6px;
+  font-size: 26px;
+  color: #fff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.cp-hero-count {
+  color: #cfd3dc;
+  font-size: 14px;
+}
+
+.cp-hero-count strong {
+  color: #22c55e;
+  font-size: 16px;
+}
+
+.cp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cp-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cp-filter-pill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #b8bcc8;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.cp-filter-pill:hover {
+  border-color: rgba(34, 197, 94, 0.5);
+  color: #fff;
+}
+
+.cp-filter-pill.active {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #06170c;
+  font-weight: 600;
+}
+
+.cp-sort-select {
+  background: #12141c;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e6e9f0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.cp-loading {
+  text-align: center;
+  padding: 40px 0;
+  color: #9aa0ad;
+  font-size: 14px;
+}
+
+.cp-card-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+  animation: cpFadeSlideIn 0.3s ease both;
+}
+
+.cp-tournament-card {
+  position: relative;
+  background: linear-gradient(180deg, #14161f 0%, #0f1119 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.cp-tournament-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.cp-tournament-card.expired {
+  opacity: 0.55;
+  filter: grayscale(0.4);
+}
+
+.cp-expired-tag {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.cp-t-title {
+  margin: 0;
+  padding-right: 70px;
+  font-size: 17px;
+  color: #fff;
+}
+
+.cp-t-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #7c8291;
+}
+
+/* Date + highlighted time badge */
+.cp-t-datetime {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cp-t-date {
+  font-size: 13px;
+  color: #b8bcc8;
+}
+
+.cp-t-time-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 183, 3, 0.14);
+  border: 1px solid rgba(255, 183, 3, 0.4);
+  color: #ffb703;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+/* Entry fee / prize pool highlight boxes */
+.cp-t-highlight-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.cp-t-highlight-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cp-t-highlight-box.fee {
+  background: rgba(96, 165, 250, 0.1);
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+.cp-t-highlight-box.prize {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.cp-t-highlight-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.cp-t-highlight-box.fee .cp-t-highlight-value {
+  color: #60a5fa;
+}
+
+.cp-t-highlight-box.prize .cp-t-highlight-value {
+  color: #22c55e;
+}
+
+.cp-t-slots {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #e6e9f0;
+}
+
+/* Join Now pulsing animation */
+.cp-join-now {
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.cp-join-now.pulse {
+  animation: cpJoinPulse 1.8s ease-in-out infinite;
+}
+
+.cp-join-now:disabled {
+  animation: none;
+}
+
+@keyframes cpJoinPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
+    transform: scale(1);
+  }
+  60% {
+    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+    transform: scale(1.015);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    transform: scale(1);
+  }
+}
+
+.cp-join-now:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.cp-sentinel {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0 8px;
+}
+
+.cp-load-more {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #e6e9f0;
+  padding: 10px 22px;
+  border-radius: 999px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.cp-load-more:hover {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+@media (max-width: 480px) {
+  .cp-hero {
+    height: 160px;
+  }
+  .cp-hero-overlay h1 {
+    font-size: 21px;
+  }
+  .cp-t-meta {
+    grid-template-columns: 1fr 1fr;
+  }
+  .cp-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .cp-sort-select {
+    width: 100%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .cp-card-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

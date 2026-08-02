@@ -1,0 +1,33 @@
+{
+  "id": "/xts-tournament/",
+  "name": "XTS Tournament",
+  "short_name": "XTS Tour",
+  "description": "⚔️ XTS Tournament এর পক্ষ থেকে সবাইকে শুভেচ্ছা ও অভিনন্দন 😍git add .
+git commit -m "Fix image paths for GitHub Pages"
+git push
+npm run deploy",
+  "start_url": "/xts-tournament/#/",
+  "scope": "/xts-tournament/",
+  "display": "standalone",
+  "background_color": "#0b0e14",
+  "theme_color": "#22c55e",
+  "orientation": "portrait",
+  "lang": "bn",
+  "dir": "ltr",
+  "categories": ["games", "sports", "entertainment"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/xts-tournament/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/xts-tournament/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

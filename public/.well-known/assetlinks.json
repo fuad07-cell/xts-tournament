@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.fuad07_cell.twa",
+      "sha256_cert_fingerprints": [
+        "DB:38:D4:5F:DD:CD:D6:F3:39:6A:58:22:9E:4C:42:2B:BA:57:A6:72:A6:B5:BE:84:C5:D1:33:2D:93:74:9B:F3"
+      ]
+    }
+  }
+]
