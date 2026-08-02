@@ -2,7 +2,10 @@
   "id": "/xts-tournament/",
   "name": "XTS Tournament",
   "short_name": "XTS Tour",
-  "description": "⚔️ XTS Tournament এর পক্ষ থেকে সবাইকে শুভেচ্ছা ও অভিনন্দন 😍",
+  "description": "⚔️ XTS Tournament এর পক্ষ থেকে সবাইকে শুভেচ্ছা ও অভিনন্দন 😍git add .
+git commit -m "Fix image paths for GitHub Pages"
+git push
+npm run deploy",
   "start_url": "/xts-tournament/#/",
   "scope": "/xts-tournament/",
   "display": "standalone",
