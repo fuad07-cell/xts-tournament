@@ -43,14 +43,13 @@ function useCountdown(t) {
 function formatDate(t) {
   const ms = getMatchTime(t)
   if (!ms) return 'তারিখ শীঘ্রই জানানো হবে'
-  const d = new Date(ms)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  return new Date(ms).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short' })
 }
 
 function formatTime(t) {
   const ms = getMatchTime(t)
   if (!ms) return ''
-  return new Date(ms).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  return new Date(ms).toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' })
 }
 
 function ripple(e) {
