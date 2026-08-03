@@ -332,30 +332,107 @@ button{font-family:inherit;}
 .admin-approve{background:var(--mint); color:#04120D;}
 .admin-reject{background:var(--surface-2); color:var(--vs-red); border:1px solid var(--line);}
 
-/* ---------- Floating support button ---------- */
+/* ============================================================
+   Floating Support button — premium breathing FAB
+   (GPU-friendly: only transform & opacity are animated)
+   ============================================================ */
 .support-fab-wrap{
   position:fixed; right:18px; bottom:96px; z-index:20;
-  display:flex; flex-direction:column; align-items:center; gap:4px;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
   cursor:grab; touch-action:none; user-select:none;
-}
-.support-fab{
-  position:relative; overflow:hidden;
-  width:48px; height:48px; border-radius:50%;
-  background:linear-gradient(135deg,#00E6A8,#00B8D9);
-  display:flex; align-items:center; justify-content:center;
-  font-size:20px;
-  box-shadow:0 4px 16px rgba(0,230,168,0.4);
-}
-.support-fab-label{
-  font-size:9.5px; font-weight:800; letter-spacing:0.5px;
-  color:var(--text); background:rgba(10,14,22,0.75);
-  padding:2px 8px; border-radius:999px;
 }
 @media (min-width:431px){
   .support-fab-wrap{ right: calc(50% - 215px + 18px); }
 }
 /* কোনো modal/popup খোলা থাকলে Support বাটন লুকিয়ে দিন, যাতে বাটন/content-এর উপর বসে না যায় */
 .device:has(.overlay) .support-fab-wrap{ display:none; }
+
+.support-fab-wrap:focus-visible{ outline:none; }
+.support-fab-wrap:focus-visible .support-fab{
+  box-shadow:0 0 0 3px #0b0e14, 0 0 0 6px #3B82F6, 0 4px 20px rgba(37,99,235,0.55);
+}
+
+/* soft blurred halo behind the button — opacity-only animation */
+.support-fab-glow{
+  position:absolute; top:50%; left:50%;
+  width:60px; height:60px; border-radius:50%;
+  transform:translate(-50%,-50%);
+  background:radial-gradient(circle, rgba(59,130,246,0.55), transparent 70%);
+  filter:blur(6px);
+  animation:fabGlowPulse 1s ease-in-out infinite;
+  pointer-events:none;
+}
+
+/* expanding ring that fades out while growing */
+.support-fab-ping{
+  position:absolute; top:50%; left:50%;
+  width:54px; height:54px; border-radius:50%;
+  margin-top:-27px; margin-left:-27px;
+  border:2px solid #3B82F6;
+  animation:fabPing 1s cubic-bezier(0,0,0.2,1) infinite;
+  pointer-events:none;
+}
+
+.support-fab{
+  position:relative; overflow:hidden; z-index:1;
+  width:54px; height:54px; border-radius:50%;
+  background:linear-gradient(135deg,#2563EB,#3B82F6);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 18px rgba(37,99,235,0.5);
+  animation:fabBreathe 1s ease-in-out infinite;
+  transition:transform .3s ease, box-shadow .3s ease;
+}
+@media (min-width:431px){
+  .support-fab{ width:60px; height:60px; }
+  .support-fab-glow{ width:68px; height:68px; }
+  .support-fab-ping{ width:60px; height:60px; margin-top:-30px; margin-left:-30px; }
+}
+
+.support-fab-wrap:hover .support-fab{
+  animation-play-state:paused;
+  transform:scale(1.08);
+  box-shadow:0 6px 26px rgba(37,99,235,0.75);
+}
+.support-fab-wrap:active .support-fab{
+  transform:scale(0.95);
+}
+
+.support-fab-label{
+  font-size:9.5px; font-weight:800; letter-spacing:0.5px;
+  color:var(--text); background:rgba(10,14,22,0.75);
+  padding:2px 8px; border-radius:999px;
+}
+
+/* click ripple-from-center (spawned via JS, GPU-friendly) */
+.support-fab-ripple{
+  position:absolute; border-radius:50%;
+  background:rgba(255,255,255,0.5);
+  transform:scale(0); opacity:0.8;
+  animation:fabRipple .6s ease-out forwards;
+  pointer-events:none;
+}
+
+@keyframes fabBreathe{
+  0%, 100%{ transform:scale(1); }
+  50%{ transform:scale(1.06); }
+}
+@keyframes fabGlowPulse{
+  0%, 100%{ opacity:0.45; transform:translate(-50%,-50%) scale(1); }
+  50%{ opacity:0.85; transform:translate(-50%,-50%) scale(1.15); }
+}
+@keyframes fabPing{
+  0%{ transform:scale(1); opacity:0.7; }
+  100%{ transform:scale(1.7); opacity:0; }
+}
+@keyframes fabRipple{
+  to{ transform:scale(1); opacity:0; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .support-fab, .support-fab-glow, .support-fab-ping, .support-fab-ripple{
+    animation:none !important;
+  }
+}
 .support-option{
   display:flex; align-items:center; gap:14px;
   background:var(--surface-2); border:1px solid var(--line); border-radius:12px;
@@ -793,3 +870,85 @@ button{font-family:inherit;}
 .tour-register-btn{padding:13px 0; font-size:14px;}
 .tour-secondary-btn{padding:13px 0; font-size:12.5px;}
 .tour-countdown{font-size:11.5px; padding:5px 10px;}
+
+/* ============================================================
+   Premium tournament card micro-interactions
+   (float/breathe/border-spin/shine = CSS; tilt/glow-follow/click
+   ripple = JS-driven via TournamentCard.jsx, transform+opacity only)
+   ============================================================ */
+
+@property --tc-border-angle{
+  syntax:'<angle>'; initial-value:0deg; inherits:false;
+}
+
+.tour-card-float{
+  border-radius:21px;
+  padding:1.5px;
+  background:conic-gradient(from var(--tc-border-angle), #3B82F6, #A855F7, #22D3EE, #3B82F6);
+  animation:tcBorderSpin 6s linear infinite, tcFloat 4s ease-in-out infinite;
+}
+@keyframes tcBorderSpin{ to{ --tc-border-angle:360deg; } }
+@keyframes tcFloat{
+  0%, 100%{ transform:translateY(0) scale(1); }
+  50%{ transform:translateY(-4px) scale(1.02); }
+}
+
+.tour-card-tilt{
+  position:relative;
+  border-radius:19.5px;
+  transform-style:preserve-3d;
+  transition:transform .15s cubic-bezier(.2,.8,.2,1), box-shadow .3s ease;
+  will-change:transform;
+  cursor:pointer;
+  isolation:isolate;
+}
+.tour-card-tilt:hover{
+  box-shadow:0 22px 50px -12px rgba(59,130,246,0.45), 0 10px 24px -8px rgba(168,85,247,0.3);
+}
+
+/* cursor-follow glow */
+.tour-card-tilt::before{
+  content:'';
+  position:absolute; inset:-1px; border-radius:inherit;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(59,130,246,0.28), transparent 55%);
+  opacity:0; transition:opacity .3s ease;
+  pointer-events:none; z-index:2;
+}
+.tour-card-tilt:hover::before{ opacity:1; }
+
+/* periodic light-streak shine sweep */
+.tour-card-tilt::after{
+  content:'';
+  position:absolute; top:0; left:-60%; width:40%; height:100%;
+  background:linear-gradient(115deg, transparent, rgba(255,255,255,0.16), transparent);
+  transform:skewX(-20deg);
+  animation:tcShineSweep 5s ease-in-out infinite;
+  pointer-events:none; z-index:2; border-radius:inherit; overflow:hidden;
+}
+@keyframes tcShineSweep{
+  0%, 88%{ left:-60%; }
+  100%{ left:130%; }
+}
+
+/* glassmorphism on the actual card face */
+.tour-card{
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  background:rgba(18,24,38,0.82);
+  border:1px solid rgba(255,255,255,0.08);
+}
+
+/* click ripple (spawned from JS on click) */
+.card-click-ripple{
+  position:absolute; border-radius:50%;
+  background:rgba(59,130,246,0.35);
+  transform:scale(0); opacity:0.9;
+  animation:tcClickRipple .6s ease-out forwards;
+  pointer-events:none; z-index:3;
+}
+@keyframes tcClickRipple{ to{ transform:scale(1); opacity:0; } }
+
+@media (prefers-reduced-motion: reduce){
+  .tour-card-float, .tour-card-tilt::after{ animation:none !important; }
+  .tour-card-tilt{ transition:none !important; }
+}
