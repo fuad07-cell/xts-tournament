@@ -39,12 +39,13 @@ export default function Home() {
       </div>
 
       <div className="grid">
-        {CATEGORIES.map((c) => {
+        {CATEGORIES.map((c, i) => {
           const count = countFor(c.key)
           return (
             <div
-              className="match-card"
+              className="match-card card-reveal"
               key={c.key}
+              style={{ '--i': i }}
               onClick={() => navigate(`/category/${c.slug}`)}
               role="button"
               tabIndex={0}

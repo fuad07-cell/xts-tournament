@@ -1,0 +1,216 @@
+/* ============================================================
+   NoticeTicker — premium glass notice bar (bell + LIVE + marquee + NEW)
+   GPU-friendly: transform / opacity animations only
+   ============================================================ */
+
+.notice-ticker-v2 {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 16px;
+  margin-bottom: 18px;
+  overflow: hidden;
+  cursor: pointer;
+  background:
+    linear-gradient(135deg, rgba(46, 155, 255, 0.12), rgba(0, 230, 168, 0.06)),
+    var(--glass-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.55);
+  animation: ntEnter 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.05s;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+.notice-ticker-v2:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px -12px rgba(46, 155, 255, 0.35);
+}
+.notice-ticker-v2:active {
+  transform: translateY(-1px) scale(0.995);
+}
+.notice-ticker-v2:focus-visible {
+  outline: 2px solid var(--neon-blue);
+  outline-offset: 2px;
+}
+
+@keyframes ntEnter {
+  from { opacity: 0; transform: translateY(-14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Thin glowing animated gradient border — rotating conic gradient masked to a ring */
+.nt-border {
+  position: absolute;
+  inset: -1px;
+  border-radius: 17px;
+  padding: 1px;
+  pointer-events: none;
+  background: conic-gradient(from 0deg, var(--mint), var(--neon-blue), #9b6bff, var(--mint));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.75;
+  animation: ntBorderSpin 5s linear infinite, ntGlowPulse 3s ease-in-out infinite;
+}
+@keyframes ntBorderSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes ntGlowPulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.95; }
+}
+
+/* Shine sweep passing across the bar every 6s */
+.nt-shine {
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(115deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+  transform: skewX(-20deg) translateX(0);
+  animation: ntShineSweep 6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes ntShineSweep {
+  0% { transform: skewX(-20deg) translateX(0); opacity: 0; }
+  4% { opacity: 1; }
+  35% { transform: skewX(-20deg) translateX(430%); opacity: 1; }
+  40%, 100% { transform: skewX(-20deg) translateX(430%); opacity: 0; }
+}
+
+/* ---------- Left: bell + LIVE ---------- */
+.nt-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.nt-bell {
+  color: var(--gold);
+  display: flex;
+  transform-origin: 50% 0%;
+  animation: ntBellRing 3s ease-in-out infinite;
+}
+@keyframes ntBellRing {
+  0%, 6% { transform: rotate(0deg); }
+  1% { transform: rotate(-14deg); }
+  2% { transform: rotate(12deg); }
+  3% { transform: rotate(-9deg); }
+  4% { transform: rotate(6deg); }
+  5% { transform: rotate(-3deg); }
+  6.5%, 100% { transform: rotate(0deg); }
+}
+.nt-live {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--neon-red);
+  background: var(--neon-red-dim);
+  padding: 3px 7px 3px 6px;
+  border-radius: 999px;
+}
+.nt-live-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--neon-red);
+  box-shadow: 0 0 6px var(--neon-red);
+  animation: ntLiveDotPulse 1.4s ease-in-out infinite;
+}
+@keyframes ntLiveDotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+/* ---------- Center: marquee / rotating text ---------- */
+.nt-center {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+.nt-fade {
+  animation: ntFadeSwap 0.45s ease both;
+}
+@keyframes ntFadeSwap {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.nt-track {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  width: max-content;
+}
+.nt-track.nt-marquee {
+  animation: ntMarquee 11s linear infinite;
+}
+.notice-ticker-v2:hover .nt-track.nt-marquee {
+  animation-play-state: paused;
+}
+@keyframes ntMarquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.nt-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #dce6ff;
+  padding-right: 48px;
+}
+
+/* ---------- Right: NEW badge + arrow ---------- */
+.nt-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.nt-new {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #04120d;
+  background: var(--mint);
+  padding: 3px 8px;
+  border-radius: 999px;
+  animation: ntNewPulse 1.8s ease-in-out infinite;
+}
+@keyframes ntNewPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 var(--mint-glow); }
+  50% { transform: scale(1.08); box-shadow: 0 0 10px 1px var(--mint-glow); }
+}
+.nt-arrow {
+  color: var(--muted);
+  transition: transform 0.2s ease;
+}
+.notice-ticker-v2:hover .nt-arrow {
+  transform: translateX(2px);
+  color: var(--neon-blue);
+}
+
+@media (max-width: 360px) {
+  .nt-live span:not(.nt-live-dot) { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notice-ticker-v2,
+  .nt-border,
+  .nt-shine,
+  .nt-bell,
+  .nt-live-dot,
+  .nt-new,
+  .nt-track.nt-marquee,
+  .nt-fade {
+    animation: none !important;
+  }
+  .notice-ticker-v2 { opacity: 1; }
+}

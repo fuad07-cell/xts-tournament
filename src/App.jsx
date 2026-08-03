@@ -3,6 +3,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import TopBar from './components/TopBar'
 import BottomNav from './components/BottomNav'
 import SupportButton from './components/SupportButton'
+import StartupSequence from './components/StartupSequence'
 import Auth from './pages/Auth'
 import Home from './pages/Home'
 import CategoryPage from './pages/CategoryPage'
@@ -11,7 +12,7 @@ import Matches from './pages/Matches'
 import Leaderboard from './pages/Leaderboard'
 import Profile from './pages/Profile'
 import TransactionHistory from './pages/TransactionHistory'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Admin from './pages/Admin'
 import { ToastProvider } from './components/ToastContext'
 import { ConfirmProvider } from './components/ConfirmContext'
@@ -30,6 +31,8 @@ function AppShell({ children }) {
 }
 
 export default function App() {
+  const [booted, setBooted] = useState(false)
+
   useEffect(() => {
     const saved = localStorage.getItem('xts-theme') || 'dark'
     document.documentElement.setAttribute('data-theme', saved)
@@ -38,6 +41,8 @@ export default function App() {
   return (
     <ConfirmProvider>
     <ToastProvider>
+    {!booted && <StartupSequence onDone={() => setBooted(true)} />}
+    {booted && (
     <Routes>
       <Route path="/auth" element={<Auth />} />
       <Route
@@ -121,6 +126,7 @@ export default function App() {
         }
       />
     </Routes>
+    )}
     </ToastProvider>
     </ConfirmProvider>
   )

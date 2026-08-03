@@ -870,3 +870,142 @@ button{font-family:inherit;}
 .tour-register-btn{padding:13px 0; font-size:14px;}
 .tour-secondary-btn{padding:13px 0; font-size:12.5px;}
 .tour-countdown{font-size:11.5px; padding:5px 10px;}
+
+/* ============================================================
+   ADD-ON: app-open entrance choreography (header / bottom-nav /
+   category cards) — plays once per full mount, after the
+   StartupSequence reveals the routed app. Transform/opacity only.
+   ============================================================ */
+.topbar{
+  animation: topbarSlideIn .6s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes topbarSlideIn{
+  from{ opacity:0; transform:translateY(-100%); }
+  to{ opacity:1; transform:translateY(0); }
+}
+
+.bottom-nav{
+  animation: bottomNavSlideIn .6s cubic-bezier(.16,1,.3,1) both;
+  animation-delay:.05s;
+}
+@keyframes bottomNavSlideIn{
+  from{ opacity:0; transform:translateY(100%); }
+  to{ opacity:1; transform:translateY(0); }
+}
+
+.match-card.card-reveal{
+  opacity:0;
+  animation: cardRevealIn .5s cubic-bezier(.16,1,.3,1) both;
+  animation-delay: calc(.15s + var(--i, 0) * 70ms);
+}
+@keyframes cardRevealIn{
+  from{ opacity:0; transform:translateY(18px) scale(.96); }
+  to{ opacity:1; transform:translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .topbar, .bottom-nav, .match-card.card-reveal{
+    animation:none !important; opacity:1 !important; transform:none !important;
+  }
+}
+
+/* ============================================================
+   ADD-ON: Support bottom sheet — glassmorphism, spring open,
+   swipe-to-close, drag handle, ripple + hover per option
+   ============================================================ */
+.support-overlay{
+  align-items:flex-end;
+  backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px);
+  animation: supportOverlayIn .25s ease both;
+}
+.support-overlay.overlay-closing{
+  animation: supportOverlayOut .26s ease both;
+}
+@keyframes supportOverlayIn{ from{ opacity:0; } to{ opacity:1; } }
+@keyframes supportOverlayOut{ from{ opacity:1; } to{ opacity:0; } }
+
+.support-sheet{
+  position:relative;
+  width:100%; max-width:430px;
+  background:linear-gradient(180deg, rgba(26,31,43,0.92), rgba(14,18,27,0.96));
+  border:1px solid var(--glass-border);
+  border-radius:24px 24px 0 0;
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+  box-shadow:0 -20px 60px -12px rgba(0,0,0,0.65);
+  padding-bottom:calc(18px + env(safe-area-inset-bottom, 0px));
+  max-height:88vh; max-height:88dvh; overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  transform:translateY(0);
+}
+.support-sheet.sheet-opening{
+  animation: sheetSpringIn .45s cubic-bezier(.34,1.56,.64,1) both;
+}
+.support-sheet.sheet-closing{
+  animation: sheetSlideOut .26s cubic-bezier(.4,0,1,1) both;
+}
+@keyframes sheetSpringIn{
+  from{ opacity:0; transform:translateY(60px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+@keyframes sheetSlideOut{
+  from{ opacity:1; transform:translateY(0); }
+  to{ opacity:0; transform:translateY(100%); }
+}
+
+.support-sheet-handle-zone{
+  padding:10px 20px 4px;
+  cursor:grab;
+  touch-action:none;
+}
+.support-sheet-handle-zone:active{ cursor:grabbing; }
+.support-sheet-grip{
+  display:block;
+  width:40px; height:4px; border-radius:999px;
+  background:var(--line);
+  margin:0 auto 14px;
+}
+.support-sheet-head{
+  display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+}
+.support-sheet-head h2{font-family:'Rajdhani',sans-serif; font-size:20px; margin-bottom:2px;}
+.support-sheet-sub{font-size:12px; color:var(--muted);}
+.support-sheet-close{
+  background:var(--surface-2); border:1px solid var(--line); color:var(--muted);
+  border-radius:100px; width:32px; height:32px; flex-shrink:0; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; font-size:13px;
+}
+
+.support-options-list{padding:14px 20px 6px; display:flex; flex-direction:column; gap:10px;}
+.support-option{
+  position:relative; overflow:hidden;
+  display:flex; align-items:center; gap:14px;
+  background:var(--surface-2); border:1px solid var(--line); border-radius:14px;
+  padding:14px 16px; text-decoration:none; color:var(--text);
+  transition:transform .2s cubic-bezier(.16,1,.3,1), border-color .2s ease, background .2s ease;
+}
+.support-option:hover{
+  transform:translateY(-2px) scale(1.01);
+  border-color:var(--glass-border);
+  background:var(--field);
+}
+.support-option:active{ transform:translateY(0) scale(.99); }
+.support-icon{
+  width:42px; height:42px; border-radius:12px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+}
+.support-option.whatsapp .support-icon{background:#25D366; color:#04120D;}
+.support-option.telegram .support-icon{background:#229ED9; color:#fff;}
+.support-option.messenger .support-icon{background:linear-gradient(135deg,#00B2FF,#A033FF,#FF5280); color:#fff;}
+.support-option.livechat .support-icon{background:var(--mint); color:#04120D;}
+.support-option.email .support-icon{background:var(--neon-orange); color:#04120D;}
+.support-text{flex:1; min-width:0;}
+.support-option .support-title{font-weight:700; font-size:14px;}
+.support-option .support-sub{font-size:11.5px; color:var(--muted); margin-top:2px;}
+.support-chevron{color:var(--muted); flex-shrink:0; transition:transform .2s ease;}
+.support-option:hover .support-chevron{transform:translateX(3px); color:var(--text);}
+
+@media (prefers-reduced-motion: reduce){
+  .support-overlay, .support-sheet, .support-option{ animation:none !important; transition:none !important; }
+}

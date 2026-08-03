@@ -1,0 +1,256 @@
+/* ============================================================
+   StartupSequence — full-screen splash + loading boot sequence
+   GPU-friendly: only transform / opacity are animated
+   ============================================================ */
+
+.startup {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  animation: startupIn 0.4s ease both;
+}
+
+.startup-exit {
+  animation: startupOut 0.55s cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
+}
+
+@keyframes startupIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes startupOut {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.04); }
+}
+
+/* Soft glowing ambient background — transform + opacity only */
+.startup-glow {
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.startup-glow-a {
+  background: radial-gradient(circle, var(--mint-dim) 0%, transparent 70%);
+  top: -20%;
+  left: -15%;
+  animation: glowFloatA 7s ease-in-out infinite;
+}
+.startup-glow-b {
+  background: radial-gradient(circle, var(--neon-blue-dim) 0%, transparent 70%);
+  bottom: -25%;
+  right: -15%;
+  animation: glowFloatB 8s ease-in-out infinite;
+}
+@keyframes glowFloatA {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.55; }
+  50% { transform: translate(4%, 5%) scale(1.12); opacity: 0.85; }
+}
+@keyframes glowFloatB {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+  50% { transform: translate(-4%, -4%) scale(1.15); opacity: 0.8; }
+}
+
+.startup-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 72%);
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 72%);
+  pointer-events: none;
+}
+
+.startup-stage {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  padding: 0 28px;
+  display: grid;
+  align-items: center;
+  justify-items: center;
+}
+
+/* ---------- Phase 1: Splash ---------- */
+.splash-content,
+.loading-content {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.stage-splash .splash-content {
+  opacity: 1;
+  transform: translateY(0);
+}
+.stage-splash .loading-content {
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
+}
+.stage-loading .splash-content {
+  opacity: 0;
+  transform: translateY(-14px);
+  pointer-events: none;
+}
+.stage-loading .loading-content {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.splash-logo {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  animation: splashLogoIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes splashLogoIn {
+  from { opacity: 0; transform: scale(0.85) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.splash-bracket {
+  font-size: 34px;
+  color: var(--mint);
+  text-shadow: 0 0 22px var(--mint-glow);
+}
+
+.splash-name {
+  display: inline-flex;
+  font-size: 30px;
+  letter-spacing: 1px;
+  color: var(--text);
+}
+.splash-letter {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: letterReveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: calc(0.35s + var(--i) * 55ms);
+}
+@keyframes letterReveal {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.splash-sub {
+  font-size: 12px;
+  align-self: flex-start;
+  margin-top: 4px;
+  opacity: 0;
+  animation: fadeIn 0.5s ease 1.2s forwards;
+}
+
+.splash-tag {
+  margin-top: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 4px;
+  color: var(--muted);
+  opacity: 0;
+  animation: fadeIn 0.6s ease 1.4s forwards;
+}
+
+/* ---------- Phase 2: Loading ---------- */
+.loader-ring-wrap {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 22px;
+}
+.loader-ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  animation: loaderSpin 2.4s linear infinite;
+}
+.loader-track {
+  fill: none;
+  stroke: var(--surface-2);
+  stroke-width: 6;
+}
+.loader-arc {
+  fill: none;
+  stroke: var(--mint);
+  stroke-width: 6;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px var(--mint-glow));
+  transition: stroke-dashoffset 0.15s linear;
+}
+@keyframes loaderSpin {
+  from { transform: rotate(-90deg); }
+  to { transform: rotate(270deg); }
+}
+.loader-pct {
+  position: absolute;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text);
+}
+
+.loader-bar-track {
+  width: 200px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.loader-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--mint), var(--neon-blue));
+  transition: width 0.12s linear;
+  box-shadow: 0 0 10px var(--mint-glow);
+}
+
+.loader-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  color: var(--muted);
+  min-height: 16px;
+  animation: fadeIn 0.35s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .startup,
+  .startup-exit,
+  .startup-glow,
+  .splash-logo,
+  .splash-letter,
+  .splash-sub,
+  .splash-tag,
+  .loader-ring,
+  .loader-text {
+    animation: none !important;
+  }
+  .splash-letter,
+  .splash-sub,
+  .splash-tag {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .splash-content,
+  .loading-content {
+    transition: opacity 0.2s linear !important;
+  }
+}
