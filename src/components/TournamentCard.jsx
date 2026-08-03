@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getMatchTime } from '../utils/matchTime'
 
 function getStatus(t) {
@@ -79,56 +79,7 @@ export default function TournamentCard({ tournament: t, image, onRegisterClick, 
     onRegisterClick(t)
   }
 
-  // ---- premium card micro-interactions (tilt, cursor glow, click ripple) ----
-  const tiltRef = useRef(null)
-  const rafRef = useRef(null)
-
-  function handleCardMouseMove(e) {
-    const el = tiltRef.current
-    if (!el || rafRef.current) return
-    rafRef.current = requestAnimationFrame(() => {
-      rafRef.current = null
-      const rect = el.getBoundingClientRect()
-      const px = (e.clientX - rect.left) / rect.width
-      const py = (e.clientY - rect.top) / rect.height
-      const rotateY = (px - 0.5) * 10
-      const rotateX = (0.5 - py) * 10
-      el.style.transform = `translateY(-10px) scale(1.03) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`
-      el.style.setProperty('--mx', `${px * 100}%`)
-      el.style.setProperty('--my', `${py * 100}%`)
-    })
-  }
-
-  function handleCardMouseLeave() {
-    const el = tiltRef.current
-    if (!el) return
-    el.style.transform = ''
-  }
-
-  function handleCardClick(e) {
-    const el = tiltRef.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    const size = Math.max(rect.width, rect.height) * 1.4
-    const span = document.createElement('span')
-    span.className = 'card-click-ripple'
-    span.style.width = span.style.height = `${size}px`
-    span.style.left = `${e.clientX - rect.left - size / 2}px`
-    span.style.top = `${e.clientY - rect.top - size / 2}px`
-    el.appendChild(span)
-    setTimeout(() => span.remove(), 600)
-  }
-  // ---------------------------------------------------------------------------
-
   return (
-    <div className="tour-card-float">
-      <div
-        ref={tiltRef}
-        className="tour-card-tilt"
-        onMouseMove={handleCardMouseMove}
-        onMouseLeave={handleCardMouseLeave}
-        onClick={handleCardClick}
-      >
     <div className={'tour-card page-slide-up' + (status === 'expired' ? ' expired' : '')}>
       <div className="tour-body">
         <div className="tour-card-header">
@@ -189,8 +140,6 @@ export default function TournamentCard({ tournament: t, image, onRegisterClick, 
         {status !== 'expired' && getMatchTime(t) && (
           <div className="tour-countdown-bar">🕒 STARTS IN <strong>{countdown}</strong></div>
         )}
-      </div>
-    </div>
       </div>
     </div>
   )
