@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { collection, addDoc, serverTimestamp, doc, getDoc, setDoc, updateDoc, query, where, onSnapshot } from 'firebase/firestore'
 import { updateProfile as updateAuthProfile } from 'firebase/auth'
 import { db } from '../firebase'
@@ -17,6 +17,32 @@ export default function Profile() {
   const [emailCopied, setEmailCopied] = useState(false)
 
   const referralCode = user ? 'XTS-' + user.uid.slice(0, 6).toUpperCase() : ''
+
+  // Wallet card premium interaction: cursor-reactive spotlight + 3D tilt.
+  // Writes CSS custom properties directly via ref (no React re-render on every
+  // mousemove), and only ever touches transform/opacity-driven values.
+  const amexRef = useRef(null)
+  function handleAmexMove(e) {
+    const el = amexRef.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    const px = ((e.clientX - r.left) / r.width) * 100
+    const py = ((e.clientY - r.top) / r.height) * 100
+    const rotateY = ((px - 50) / 50) * 6
+    const rotateX = ((py - 50) / 50) * -6
+    el.style.setProperty('--mx', px + '%')
+    el.style.setProperty('--my', py + '%')
+    el.style.setProperty('--rx', rotateY + 'deg')
+    el.style.setProperty('--ry', rotateX + 'deg')
+    el.style.setProperty('--spot', '1')
+  }
+  function handleAmexLeave() {
+    const el = amexRef.current
+    if (!el) return
+    el.style.setProperty('--rx', '0deg')
+    el.style.setProperty('--ry', '0deg')
+    el.style.setProperty('--spot', '0')
+  }
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -83,7 +109,14 @@ export default function Profile() {
         </div>
       </div>
 
-      <div className="amex-card">
+      <div className="amex-card-float">
+      <div
+        className="amex-card"
+        ref={amexRef}
+        onMouseMove={handleAmexMove}
+        onMouseLeave={handleAmexLeave}
+      >
+        <div className="amex-sheen" aria-hidden="true" />
         <div className="amex-top">
           <span className="amex-label">WALLET</span>
           <span className="amex-wifi">📶</span>
@@ -116,6 +149,7 @@ export default function Profile() {
           </div>
           <span className="amex-chevron">›</span>
         </div>
+      </div>
       </div>
 
       <div className="balance-actions">

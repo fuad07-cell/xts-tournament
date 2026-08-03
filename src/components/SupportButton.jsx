@@ -3,25 +3,15 @@ import { WHATSAPP_LINK, TELEGRAM_SUPPORT_LINK } from '../constants/links'
 
 // ---------------------------------------------------------------------------
 // Floating Support button — premium "breathing" FAB with glow + pulse ring.
-// Preserves ALL existing behavior: drag-to-reposition, click opens the
-// support sheet. The sheet is now a glassmorphism bottom sheet with a
-// spring-open animation, drag-to-close, and 5 contact options.
-//
-// NOTE: MESSENGER_LINK / LIVE_CHAT_LINK / EMAIL_SUPPORT_LINK below are
-// placeholders — move them into src/constants/links.js alongside
-// WHATSAPP_LINK / TELEGRAM_SUPPORT_LINK and import from there once you have
-// real destinations for them.
+// Preserves ALL existing FAB behavior: drag-to-reposition, click opens the
+// support popup. The popup is a centered glassmorphism card with a
+// scale + fade spring-open animation, backdrop blur, and 2 contact options.
 // ---------------------------------------------------------------------------
-
-const MESSENGER_LINK = 'https://m.me/xtstournamentbd'
-const LIVE_CHAT_LINK = WHATSAPP_LINK
-const EMAIL_SUPPORT_LINK = 'mailto:support@xtstournamentbd.com'
 
 const FAB_POS_KEY = 'xts-support-fab-pos'
 const FAB_SIZE = 60 // desktop size — must match .support-fab width/height in CSS (54 on mobile)
 const FAB_MARGIN = 8
-const CLOSE_ANIM_MS = 260
-const DRAG_CLOSE_THRESHOLD = 90
+const CLOSE_ANIM_MS = 220
 
 function clampFabPos(x, y) {
   const maxX = window.innerWidth - FAB_SIZE - FAB_MARGIN
@@ -52,7 +42,7 @@ const SUPPORT_OPTIONS = [
     href: WHATSAPP_LINK,
     className: 'whatsapp',
     title: 'WhatsApp Support',
-    sub: 'সবচেয়ে দ্রুত উত্তর পান',
+    sub: 'Chat on WhatsApp',
     Icon: WhatsAppIcon,
   },
   {
@@ -60,39 +50,14 @@ const SUPPORT_OPTIONS = [
     href: TELEGRAM_SUPPORT_LINK,
     className: 'telegram',
     title: 'Telegram Support',
-    sub: 'চ্যানেলে জয়েন করে সরাসরি চ্যাট করুন',
+    sub: 'Chat on Telegram',
     Icon: TelegramIcon,
-  },
-  {
-    key: 'messenger',
-    href: MESSENGER_LINK,
-    className: 'messenger',
-    title: 'Messenger',
-    sub: 'Facebook Messenger-এ মেসেজ দিন',
-    Icon: MessengerIcon,
-  },
-  {
-    key: 'livechat',
-    href: LIVE_CHAT_LINK,
-    className: 'livechat',
-    title: 'Live Chat',
-    sub: 'এখনই একজন এজেন্টের সাথে কথা বলুন',
-    Icon: LiveChatIcon,
-  },
-  {
-    key: 'email',
-    href: EMAIL_SUPPORT_LINK,
-    className: 'email',
-    title: 'Email Support',
-    sub: 'বিস্তারিত সমস্যার জন্য ইমেইল করুন',
-    Icon: EmailIcon,
   },
 ]
 
 export default function SupportButton() {
   const [open, setOpen] = useState(false)
   const [closing, setClosing] = useState(false)
-  const [dragY, setDragY] = useState(0)
 
   // null = not moved yet, use the default CSS corner position (bottom/right)
   const [pos, setPos] = useState(() => {
@@ -106,7 +71,6 @@ export default function SupportButton() {
   const wrapRef = useRef(null)
   const btnRef = useRef(null)
   const drag = useRef({ dragging: false, moved: false, startX: 0, startY: 0, offsetX: 0, offsetY: 0 })
-  const sheetDrag = useRef({ dragging: false, startY: 0 })
   const closingRef = useRef(false)
 
   useEffect(() => {
@@ -124,10 +88,19 @@ export default function SupportButton() {
     setTimeout(() => {
       setOpen(false)
       setClosing(false)
-      setDragY(0)
       closingRef.current = false
     }, CLOSE_ANIM_MS)
   }
+
+  // Prevent background scrolling while the popup is open; always restore it.
+  useEffect(() => {
+    if (!open) return
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prevOverflow
+    }
+  }, [open])
 
   // Close on Escape
   useEffect(() => {
@@ -193,27 +166,6 @@ export default function SupportButton() {
     }
   }
 
-  // ---- Bottom sheet: swipe-down-to-close ----
-  function onSheetPointerDown(e) {
-    sheetDrag.current = { dragging: true, startY: e.clientY }
-    e.currentTarget.setPointerCapture?.(e.pointerId)
-  }
-  function onSheetPointerMove(e) {
-    const d = sheetDrag.current
-    if (!d.dragging) return
-    const delta = e.clientY - d.startY
-    if (delta > 0) setDragY(delta)
-  }
-  function onSheetPointerUp() {
-    const d = sheetDrag.current
-    d.dragging = false
-    if (dragY > DRAG_CLOSE_THRESHOLD) {
-      requestClose()
-    } else {
-      setDragY(0)
-    }
-  }
-
   function handleOptionClick(e) {
     spawnRipple(e.currentTarget, e.clientX, e.clientY)
   }
@@ -247,32 +199,22 @@ export default function SupportButton() {
 
       {open && (
         <div
-          className={'overlay support-overlay' + (closing ? ' overlay-closing' : '')}
+          className={'overlay overlay-center support-overlay' + (closing ? ' overlay-closing' : '')}
           onClick={requestClose}
         >
           <div
-            className={'support-sheet' + (closing ? ' sheet-closing' : ' sheet-opening')}
-            style={dragY ? { transform: `translateY(${dragY}px)`, transition: 'none' } : undefined}
+            className={'support-popup' + (closing ? ' popup-closing' : ' popup-opening')}
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-label="Contact Support"
           >
-            <div
-              className="support-sheet-handle-zone"
-              onPointerDown={onSheetPointerDown}
-              onPointerMove={onSheetPointerMove}
-              onPointerUp={onSheetPointerUp}
-              onPointerCancel={onSheetPointerUp}
-            >
-              <span className="support-sheet-grip" aria-hidden="true" />
-              <div className="support-sheet-head">
-                <div>
-                  <h2>Contact Support</h2>
-                  <p className="support-sheet-sub">যেকোনো একটি মাধ্যমে যোগাযোগ করুন</p>
-                </div>
-                <button className="support-sheet-close" onClick={requestClose} aria-label="Close">✕</button>
+            <div className="support-popup-head">
+              <div>
+                <h2>Contact Support</h2>
+                <p className="support-popup-sub">যেকোনো একটি মাধ্যমে যোগাযোগ করুন</p>
               </div>
+              <button className="support-popup-close" onClick={requestClose} aria-label="Close">✕</button>
             </div>
 
             <div className="support-options-list">
@@ -331,34 +273,6 @@ function TelegramIcon() {
   return (
     <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
       <path d="M21.9 4.3 18.8 19c-.2 1-.8 1.3-1.7.8l-4.6-3.4-2.2 2.1c-.2.2-.4.4-.9.4l.3-4.6 8.4-7.6c.4-.3-.1-.5-.5-.2L6.6 12.7 2 11.3c-1-.3-1-1 .2-1.5L20.6 3c.8-.3 1.6.2 1.3 1.3Z" />
-    </svg>
-  )
-}
-
-function MessengerIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-      <path d="M12 2C6.5 2 2 6.1 2 11.2c0 2.9 1.4 5.5 3.7 7.2V22l3.4-1.9c.9.3 1.9.4 2.9.4 5.5 0 10-4.1 10-9.3S17.5 2 12 2Zm1 12.5-2.6-2.7-4.9 2.7 5.4-5.7 2.6 2.7 4.9-2.7L13 14.5Z" />
-    </svg>
-  )
-}
-
-function LiveChatIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12a8 8 0 0 1-11.6 7.1L3 20l1.1-4.3A8 8 0 1 1 21 12Z" />
-      <circle cx="8.5" cy="12" r="1" fill="currentColor" stroke="none" />
-      <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
-      <circle cx="15.5" cy="12" r="1" fill="currentColor" stroke="none" />
-    </svg>
-  )
-}
-
-function EmailIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="5" width="18" height="14" rx="2.5" />
-      <path d="m4 7 8 6 8-6" />
     </svg>
   )
 }

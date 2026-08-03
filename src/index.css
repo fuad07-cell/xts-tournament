@@ -686,23 +686,114 @@ button{font-family:inherit;}
   position:relative; overflow:hidden;
   border-radius:18px; padding:20px;
   background:
+    radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,calc(0.16 * var(--spot,0))) 0%, transparent 45%),
     repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 2px, transparent 2px, transparent 14px),
     linear-gradient(135deg, #0F2A4A 0%, #143C63 45%, #0B1F38 100%);
   border:1px solid rgba(120,170,255,0.25);
   box-shadow:0 14px 30px -12px rgba(20,80,160,0.5);
   margin-bottom:16px;
+  /* --- premium tilt/glow additions (transform + opacity only) --- */
+  transform:perspective(900px) rotateX(var(--ry,0deg)) rotateY(var(--rx,0deg));
+  transform-style:preserve-3d;
+  transition:transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s ease;
+  will-change:transform;
 }
-.amex-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
+.amex-card:hover{
+  box-shadow:0 20px 40px -14px rgba(20,80,160,0.65), 0 0 0 1px rgba(140,190,255,0.3);
+}
+
+/* Wrapper: gentle float + ambient drop shadow, kept separate from the card's
+   own tilt transform so the two animations never fight each other. */
+.amex-card-float{
+  animation:amex-float 5.5s ease-in-out infinite;
+  transform-origin:center;
+}
+
+/* Breathing halo glow behind the card (edge glow) */
+.amex-card::before{
+  content:"";
+  position:absolute; inset:-16px;
+  border-radius:26px;
+  background:radial-gradient(closest-side, rgba(90,160,255,0.35), transparent 75%);
+  filter:blur(14px);
+  opacity:0.55;
+  animation:amex-breathe 4s ease-in-out infinite;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* Slow-rotating conic-gradient ring = animated border highlight */
+.amex-card::after{
+  content:"";
+  position:absolute; inset:0;
+  border-radius:18px;
+  padding:1px;
+  background:conic-gradient(from 0deg, rgba(255,255,255,0) 0deg, rgba(160,200,255,0.9) 60deg, rgba(255,255,255,0) 140deg, rgba(255,255,255,0) 360deg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+  animation:amex-ring-spin 4.5s linear infinite;
+  opacity:0.8;
+  pointer-events:none;
+  z-index:1;
+}
+
+/* Sheen layer: diagonal light sweep + subtle glass finish, sits above content
+   background but below text (amex-top etc. render after it in DOM/z-index). */
+.amex-sheen{
+  position:absolute; inset:0;
+  z-index:0;
+  pointer-events:none;
+  border-radius:inherit;
+  background:linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.16) 45%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0.16) 55%, transparent 70%);
+  background-size:250% 250%;
+  mix-blend-mode:overlay;
+  animation:amex-sweep 4.5s ease-in-out infinite;
+}
+.amex-sheen::after{
+  content:"";
+  position:absolute; inset:0;
+  border-radius:inherit;
+  background:linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 35%, rgba(255,255,255,0) 70%, rgba(255,255,255,0.05) 100%);
+}
+
+@keyframes amex-float{
+  0%,100%{ transform:translateY(0); }
+  50%{ transform:translateY(-5px); }
+}
+@keyframes amex-breathe{
+  0%,100%{ opacity:0.35; transform:scale(0.98); }
+  50%{ opacity:0.65; transform:scale(1.02); }
+}
+@keyframes amex-ring-spin{
+  to{ transform:rotate(360deg); }
+}
+@keyframes amex-sweep{
+  0%{ background-position:0% 0%; }
+  50%{ background-position:100% 100%; }
+  100%{ background-position:0% 0%; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .amex-card-float{ animation:none; }
+  .amex-card::before{ animation:none; }
+  .amex-card::after{ animation:none; }
+  .amex-sheen{ animation:none; }
+  .amex-card{ transition:none; }
+}
+
+.amex-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; position:relative; z-index:2;}
 .amex-label{font-size:10px; letter-spacing:2px; color:rgba(255,255,255,0.6); font-weight:700;}
 .amex-wifi{font-size:14px; opacity:0.7; transform:rotate(90deg); display:inline-block;}
 .amex-chip{
   width:34px; height:26px; border-radius:6px; margin-bottom:10px;
   background:linear-gradient(135deg,#FFD98A,#D9A441);
   display:flex; align-items:center; justify-content:center; font-size:13px; color:#4a3200;
+  position:relative; z-index:2;
 }
-.amex-balance-label{font-size:10px; letter-spacing:1.5px; color:rgba(255,255,255,0.55); margin-bottom:4px;}
-.amex-balance{font-family:'JetBrains Mono',monospace; font-size:28px; font-weight:700; color:#fff; margin-bottom:16px;}
-.amex-mini-stats{display:flex; gap:10px; margin-bottom:18px;}
+.amex-balance-label{font-size:10px; letter-spacing:1.5px; color:rgba(255,255,255,0.55); margin-bottom:4px; position:relative; z-index:2;}
+.amex-balance{font-family:'JetBrains Mono',monospace; font-size:28px; font-weight:700; color:#fff; margin-bottom:16px; position:relative; z-index:2;}
+.amex-mini-stats{display:flex; gap:10px; margin-bottom:18px; position:relative; z-index:2;}
 .amex-mini{
   flex:1; display:flex; align-items:center; gap:8px;
   background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
@@ -711,7 +802,7 @@ button{font-family:inherit;}
 .amex-mini-icon{font-size:15px;}
 .amex-mini-label{font-size:9px; letter-spacing:1px; color:rgba(255,255,255,0.55);}
 .amex-mini-value{font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#fff;}
-.amex-bottom{display:flex; justify-content:space-between; align-items:center;}
+.amex-bottom{display:flex; justify-content:space-between; align-items:center; position:relative; z-index:2;}
 .amex-holder-label{font-size:9px; letter-spacing:1.5px; color:rgba(255,255,255,0.5);}
 .amex-holder-name{font-size:13px; font-weight:700; color:#fff; letter-spacing:0.5px;}
 .amex-chevron{color:rgba(255,255,255,0.5); font-size:18px;}
@@ -910,85 +1001,79 @@ button{font-family:inherit;}
 }
 
 /* ============================================================
-   ADD-ON: Support bottom sheet — glassmorphism, spring open,
-   swipe-to-close, drag handle, ripple + hover per option
+   ADD-ON: Support popup — centered glassmorphism card,
+   scale + fade spring-open, ripple + hover per option
    ============================================================ */
 .support-overlay{
-  align-items:flex-end;
   backdrop-filter:blur(6px);
   -webkit-backdrop-filter:blur(6px);
   animation: supportOverlayIn .25s ease both;
+  padding:16px;
 }
 .support-overlay.overlay-closing{
-  animation: supportOverlayOut .26s ease both;
+  animation: supportOverlayOut .2s ease both;
 }
 @keyframes supportOverlayIn{ from{ opacity:0; } to{ opacity:1; } }
 @keyframes supportOverlayOut{ from{ opacity:1; } to{ opacity:0; } }
 
-.support-sheet{
+.support-popup{
   position:relative;
-  width:100%; max-width:430px;
-  background:linear-gradient(180deg, rgba(26,31,43,0.92), rgba(14,18,27,0.96));
+  width:100%; max-width:360px;
+  background:linear-gradient(180deg, rgba(26,31,43,0.9), rgba(14,18,27,0.94));
   border:1px solid var(--glass-border);
-  border-radius:24px 24px 0 0;
+  border-radius:20px;
   backdrop-filter:blur(22px);
   -webkit-backdrop-filter:blur(22px);
-  box-shadow:0 -20px 60px -12px rgba(0,0,0,0.65);
-  padding-bottom:calc(18px + env(safe-area-inset-bottom, 0px));
-  max-height:88vh; max-height:88dvh; overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  transform:translateY(0);
+  box-shadow:0 24px 60px -16px rgba(0,0,0,0.65);
+  padding:20px;
+  transform-origin:center;
 }
-.support-sheet.sheet-opening{
-  animation: sheetSpringIn .45s cubic-bezier(.34,1.56,.64,1) both;
+.support-popup.popup-opening{
+  animation: popupScaleIn 260ms cubic-bezier(.16,1,.3,1) both;
 }
-.support-sheet.sheet-closing{
-  animation: sheetSlideOut .26s cubic-bezier(.4,0,1,1) both;
+.support-popup.popup-closing{
+  animation: popupScaleOut 220ms cubic-bezier(.4,0,1,1) both;
 }
-@keyframes sheetSpringIn{
-  from{ opacity:0; transform:translateY(60px); }
-  to{ opacity:1; transform:translateY(0); }
+@keyframes popupScaleIn{
+  from{ opacity:0; transform:scale(0.95); box-shadow:0 8px 24px -12px rgba(0,0,0,0.4); }
+  to{ opacity:1; transform:scale(1); box-shadow:0 24px 60px -16px rgba(0,0,0,0.65); }
 }
-@keyframes sheetSlideOut{
-  from{ opacity:1; transform:translateY(0); }
-  to{ opacity:0; transform:translateY(100%); }
+@keyframes popupScaleOut{
+  from{ opacity:1; transform:scale(1); }
+  to{ opacity:0; transform:scale(0.95); }
 }
 
-.support-sheet-handle-zone{
-  padding:10px 20px 4px;
-  cursor:grab;
-  touch-action:none;
-}
-.support-sheet-handle-zone:active{ cursor:grabbing; }
-.support-sheet-grip{
-  display:block;
-  width:40px; height:4px; border-radius:999px;
-  background:var(--line);
-  margin:0 auto 14px;
-}
-.support-sheet-head{
+.support-popup-head{
   display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+  margin-bottom:16px;
 }
-.support-sheet-head h2{font-family:'Rajdhani',sans-serif; font-size:20px; margin-bottom:2px;}
-.support-sheet-sub{font-size:12px; color:var(--muted);}
-.support-sheet-close{
+.support-popup-head h2{
+  font-family:'Rajdhani',sans-serif; font-size:19px; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase; margin-bottom:2px;
+}
+.support-popup-sub{font-size:12px; color:var(--muted);}
+.support-popup-close{
   background:var(--surface-2); border:1px solid var(--line); color:var(--muted);
   border-radius:100px; width:32px; height:32px; flex-shrink:0; cursor:pointer;
   display:flex; align-items:center; justify-content:center; font-size:13px;
+  transition:transform .2s ease, background .2s ease, color .2s ease;
 }
+.support-popup-close:hover{ background:var(--field); color:var(--text); transform:scale(1.06); }
+.support-popup-close:active{ transform:scale(0.94); }
 
-.support-options-list{padding:14px 20px 6px; display:flex; flex-direction:column; gap:10px;}
+.support-options-list{display:flex; flex-direction:column; gap:10px;}
 .support-option{
   position:relative; overflow:hidden;
   display:flex; align-items:center; gap:14px;
   background:var(--surface-2); border:1px solid var(--line); border-radius:14px;
   padding:14px 16px; text-decoration:none; color:var(--text);
-  transition:transform .2s cubic-bezier(.16,1,.3,1), border-color .2s ease, background .2s ease;
+  transition:transform .2s cubic-bezier(.16,1,.3,1), border-color .2s ease, background .2s ease, box-shadow .2s ease;
 }
 .support-option:hover{
   transform:translateY(-2px) scale(1.01);
   border-color:var(--glass-border);
   background:var(--field);
+  box-shadow:0 10px 24px -10px rgba(59,130,246,0.45);
 }
 .support-option:active{ transform:translateY(0) scale(.99); }
 .support-icon{
@@ -997,9 +1082,6 @@ button{font-family:inherit;}
 }
 .support-option.whatsapp .support-icon{background:#25D366; color:#04120D;}
 .support-option.telegram .support-icon{background:#229ED9; color:#fff;}
-.support-option.messenger .support-icon{background:linear-gradient(135deg,#00B2FF,#A033FF,#FF5280); color:#fff;}
-.support-option.livechat .support-icon{background:var(--mint); color:#04120D;}
-.support-option.email .support-icon{background:var(--neon-orange); color:#04120D;}
 .support-text{flex:1; min-width:0;}
 .support-option .support-title{font-weight:700; font-size:14px;}
 .support-option .support-sub{font-size:11.5px; color:var(--muted); margin-top:2px;}
@@ -1007,5 +1089,5 @@ button{font-family:inherit;}
 .support-option:hover .support-chevron{transform:translateX(3px); color:var(--text);}
 
 @media (prefers-reduced-motion: reduce){
-  .support-overlay, .support-sheet, .support-option{ animation:none !important; transition:none !important; }
+  .support-overlay, .support-popup, .support-option{ animation:none !important; transition:none !important; }
 }
