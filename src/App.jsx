@@ -100,9 +100,9 @@ function SupportButton() {
 
   return (
     <>
-      <button
+      <div
         ref={btnRef}
-        className="support-fab"
+        className="support-fab-wrap"
         style={pos ? { left: pos.x, top: pos.y, right: 'auto', bottom: 'auto', position: 'fixed', touchAction: 'none' } : { touchAction: 'none' }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -111,8 +111,9 @@ function SupportButton() {
         onClick={handleClick}
         title="Support — ধরে টেনে যেকোনো জায়গায় সরাতে পারবেন"
       >
-        💬
-      </button>
+        <span className="support-fab">🎧</span>
+        <span className="support-fab-label">SUPPORT</span>
+      </div>
 
       {open && (
         <div className="overlay" onClick={() => setOpen(false)}>
