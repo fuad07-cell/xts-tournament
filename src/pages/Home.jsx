@@ -3,12 +3,24 @@ import { useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
 import { CATEGORIES } from '../constants/categories'
-import WelcomePopup from '../components/WelcomePopup'
+import { isExpired } from '../utils/matchTime'
+import NoticeBoard from '../components/NoticeBoard'
 import InfoBanners from '../components/InfoBanners'
 import NoticeTicker from '../components/NoticeTicker'
 import PosterCarousel from '../components/PosterCarousel'
 import HeroBanner from '../components/HeroBanner'
 import './Home.css'
+
+// প্রতিটি category-র নিজস্ব থিম রঙ — glow-active হলে এই নামের CSS class যোগ হবে
+// (rules: .glow-green / .glow-blue / .glow-red / .glow-orange / .glow-purple / .glow-gold — Home.css এ)
+const CATEGORY_GLOW = {
+  br: 'green',
+  clash_squad: 'blue',
+  lone_wolf: 'red',
+  lost_to_win: 'orange',
+  cs_arena: 'purple',
+  free_match: 'gold',
+}
 
 export default function Home() {
   const [tournaments, setTournaments] = useState([])
@@ -22,11 +34,19 @@ export default function Home() {
     return unsub
   }, [])
 
-  const countFor = (key) => tournaments.filter((t) => t.category === key).length
+  // ম্যাচের সময় শুধু ঘড়ির কাঁটায় পার হয়ে গেলেও (কোনো Firestore write ছাড়াই)
+  // count/glow যেন live আপডেট হয় — তাই প্রতি ৩০ সেকেন্ডে একবার re-render trigger করি।
+  const [, forceTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => forceTick((n) => n + 1), 30000)
+    return () => clearInterval(id)
+  }, [])
+
+  const countFor = (key) => tournaments.filter((t) => t.category === key && !isExpired(t)).length
 
   return (
     <div className="screen">
-      <WelcomePopup />
+      <NoticeBoard />
       <InfoBanners />
       <NoticeTicker />
       <PosterCarousel />
@@ -41,9 +61,11 @@ export default function Home() {
       <div className="grid">
         {CATEGORIES.map((c, i) => {
           const count = countFor(c.key)
+          const hasUpcoming = count > 0
+          const glowClass = hasUpcoming ? ` glow-active glow-${CATEGORY_GLOW[c.key] || 'blue'}` : ''
           return (
             <div
-              className="match-card card-reveal"
+              className={'match-card card-reveal' + glowClass}
               key={c.key}
               style={{ '--i': i }}
               onClick={() => navigate(`/category/${c.slug}`)}

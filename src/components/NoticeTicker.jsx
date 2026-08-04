@@ -1,12 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './NoticeTicker.css'
 
 // ---------------------------------------------------------------------------
 // NoticeTicker — premium glass notice bar shown below the header on Home.
-// Rotates through NOTICES every 5s (fade transition), auto-scrolls (marquee)
-// any notice whose text overflows the available width, pauses on hover, and
-// opens the notice's target page on click.
+// Continuous TV-news-style ticker: all notices scroll right-to-left in an
+// infinite seamless loop. Pauses on hover, resumes smoothly.
 // Edit NOTICES below to add / remove / re-link items.
 // ---------------------------------------------------------------------------
 
@@ -17,31 +16,27 @@ const NOTICES = [
   { text: '📣 প্রতিদিন নতুন টুর্নামেন্ট যোগ হচ্ছে — এখনই লিডারবোর্ড দেখুন।', link: '/leaderboard' },
 ]
 
-const ROTATE_MS = 5000
+// Target scroll speed in px/s (40–60 range for comfortable reading).
+// This is NOT a JS animation loop — it only calculates a CSS duration once.
+const TICKER_PX_PER_SEC = 50
 
 export default function NoticeTicker() {
-  const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
-  const [overflowing, setOverflowing] = useState(false)
-  const textRef = useRef(null)
+  const trackRef = useRef(null)
+  const [duration, setDuration] = useState(0)
   const navigate = useNavigate()
 
-  useEffect(() => {
-    if (paused || NOTICES.length < 2) return
-    const t = setInterval(() => setIndex((i) => (i + 1) % NOTICES.length), ROTATE_MS)
-    return () => clearInterval(t)
-  }, [paused])
-
+  // Measure the first-half width (original notices) and derive animation
+  // duration so the CSS keyframe scrolls at ~TICKER_PX_PER_SEC.
   useLayoutEffect(() => {
-    const el = textRef.current
-    if (!el || !el.parentElement) return
-    setOverflowing(el.scrollWidth > el.parentElement.clientWidth + 2)
-  }, [index])
-
-  const notice = NOTICES[index]
+    const el = trackRef.current
+    if (!el) return
+    const halfWidth = el.scrollWidth / 2
+    setDuration(halfWidth / TICKER_PX_PER_SEC)
+  }, [])
 
   function handleActivate() {
-    if (notice?.link) navigate(notice.link)
+    if (NOTICES[0]?.link) navigate(NOTICES[0].link)
   }
 
   return (
@@ -52,7 +47,7 @@ export default function NoticeTicker() {
       onClick={handleActivate}
       role="button"
       tabIndex={0}
-      aria-label={notice.text}
+      aria-label={NOTICES.map((n) => n.text).join(' · ')}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
@@ -77,19 +72,19 @@ export default function NoticeTicker() {
       </div>
 
       <div className="nt-center">
-        <div className="nt-fade" key={index}>
-          <div className={'nt-track' + (overflowing ? ' nt-marquee' : '')}>
-            <span ref={textRef} className="nt-text">{notice.text}</span>
-            {overflowing && <span className="nt-text" aria-hidden="true">{notice.text}</span>}
-          </div>
+        <div
+          ref={trackRef}
+          className={'nt-track' + (duration ? ' nt-scrolling' : '') + (paused ? ' nt-paused' : '')}
+          style={duration ? { animationDuration: `${duration}s` } : undefined}
+        >
+          {NOTICES.map((n, i) => (
+            <span key={i} className="nt-text">{n.text}</span>
+          ))}
+          {/* Duplicate for seamless infinite loop */}
+          {NOTICES.map((n, i) => (
+            <span key={`d-${i}`} className="nt-text" aria-hidden="true">{n.text}</span>
+          ))}
         </div>
-      </div>
-
-      <div className="nt-right">
-        <span className="nt-new">NEW</span>
-        <svg className="nt-arrow" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M9 6l6 6-6 6" />
-        </svg>
       </div>
     </div>
   )

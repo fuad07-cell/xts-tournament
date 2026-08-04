@@ -19,3 +19,12 @@ export function getMatchTime(t) {
 
   return null
 }
+
+// একটি ম্যাচ "upcoming" কিনা — status 'closed' না হলে এবং শুরুর সময় এখনো
+// ভবিষ্যতে থাকলে। CategoryPage.jsx এবং Home.jsx দুটোই এখান থেকে ব্যবহার করবে।
+export function isExpired(t) {
+  if (t.status === 'closed') return true
+  const matchTime = getMatchTime(t)
+  if (!matchTime) return false
+  return matchTime < Date.now()
+}

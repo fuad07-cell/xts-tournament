@@ -9,7 +9,7 @@ import PrizeModal from '../components/PrizeModal'
 import JoinModal from '../components/JoinModal'
 import RoomIdModal from '../components/RoomIdModal'
 import { getCategoryBySlug } from '../constants/categories'
-import { getMatchTime } from '../utils/matchTime'
+import { getMatchTime, isExpired } from '../utils/matchTime'
 import { useJoinMatch } from '../hooks/useJoinMatch'
 
 const SORT_OPTIONS = [
@@ -24,13 +24,6 @@ const FILTERS = [
   { key: 'upcoming', label: 'Upcoming' },
   { key: 'expired', label: 'Expired' },
 ]
-
-function isExpired(t) {
-  if (t.status === 'closed') return true
-  const matchTime = getMatchTime(t)
-  if (!matchTime) return false
-  return matchTime < Date.now()
-}
 
 export default function CategoryPage() {
   const { slug } = useParams()

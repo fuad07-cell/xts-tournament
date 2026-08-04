@@ -1,6 +1,6 @@
 /* ============================================================
-   NoticeTicker — premium glass notice bar (bell + LIVE + marquee + NEW)
-   GPU-friendly: transform / opacity animations only
+   NoticeTicker — premium glass notice bar (bell + LIVE + ticker)
+   Continuous TV-news-style scroll. GPU-friendly: transform only.
    ============================================================ */
 
 .notice-ticker-v2 {
@@ -130,32 +130,26 @@
   50% { opacity: 0.4; transform: scale(0.7); }
 }
 
-/* ---------- Center: marquee / rotating text ---------- */
+/* ---------- Center: continuous ticker scroll ---------- */
 .nt-center {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-}
-.nt-fade {
-  animation: ntFadeSwap 0.45s ease both;
-}
-@keyframes ntFadeSwap {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 .nt-track {
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
   width: max-content;
+ will-change: transform;
 }
-.nt-track.nt-marquee {
-  animation: ntMarquee 11s linear infinite;
+.nt-track.nt-scrolling {
+  animation: ntTickerScroll linear infinite;
 }
-.notice-ticker-v2:hover .nt-track.nt-marquee {
+.nt-track.nt-paused {
   animation-play-state: paused;
 }
-@keyframes ntMarquee {
+@keyframes ntTickerScroll {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
@@ -163,38 +157,7 @@
   font-size: 12.5px;
   font-weight: 600;
   color: #dce6ff;
-  padding-right: 48px;
-}
-
-/* ---------- Right: NEW badge + arrow ---------- */
-.nt-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-.nt-new {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9.5px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  color: #04120d;
-  background: var(--mint);
-  padding: 3px 8px;
-  border-radius: 999px;
-  animation: ntNewPulse 1.8s ease-in-out infinite;
-}
-@keyframes ntNewPulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 var(--mint-glow); }
-  50% { transform: scale(1.08); box-shadow: 0 0 10px 1px var(--mint-glow); }
-}
-.nt-arrow {
-  color: var(--muted);
-  transition: transform 0.2s ease;
-}
-.notice-ticker-v2:hover .nt-arrow {
-  transform: translateX(2px);
-  color: var(--neon-blue);
+  padding-right: 36px;
 }
 
 @media (max-width: 360px) {
@@ -207,9 +170,7 @@
   .nt-shine,
   .nt-bell,
   .nt-live-dot,
-  .nt-new,
-  .nt-track.nt-marquee,
-  .nt-fade {
+  .nt-track.nt-scrolling {
     animation: none !important;
   }
   .notice-ticker-v2 { opacity: 1; }
