@@ -24,7 +24,7 @@ export default function TopBar() {
       <div className="topbar-brand" onClick={() => navigate('/')}>
         <span className="topbar-wordmark-main">XTS</span>
         <span className="topbar-divider" aria-hidden="true" />
-        <span className="topbar-wordmark-sub">TOURNAMENT</span>
+        <span className="topbar-wordmark-sub">TOUR BD</span>
       </div>
 
       <div className="topbar-actions">
@@ -53,10 +53,10 @@ export default function TopBar() {
           onClick={(e) => { spawnRipple(e); navigate('/profile') }}
         >
           <span className="topbar-wallet-icon-chip">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="6" width="18" height="13" rx="3" stroke="currentColor" strokeWidth="1.9"/>
-              <path d="M3 10H21" stroke="currentColor" strokeWidth="1.9"/>
-              <circle cx="16.5" cy="14.5" r="1.4" fill="currentColor"/>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M3 8C3 6.34315 4.34315 5 6 5H16C17.6569 5 19 6.34315 19 8V8.5H6.5C5.11929 8.5 4 9.61929 4 11V17C4 18.6569 5.34315 20 7 20H18C19.6569 20 21 18.6569 21 17V10.5C21 9.39543 20.1046 8.5 19 8.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M4 11C4 9.61929 5.11929 8.5 6.5 8.5H19C20.1046 8.5 21 9.39543 21 10.5V17C21 18.6569 19.6569 20 18 20H7C5.34315 20 4 18.6569 4 17V11Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"/>
+              <circle cx="17" cy="14" r="1.6" fill="currentColor"/>
             </svg>
           </span>
           <span className="topbar-wallet-text">
