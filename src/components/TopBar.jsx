@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import NotificationBell from './NotificationBell'
 
 export default function TopBar() {
   const { profile } = useAuth()
@@ -12,7 +13,7 @@ export default function TopBar() {
         <span className="logo-sub">BD</span>
       </div>
       <div className="top-actions">
-        <div className="icon-pill">🏆</div>
+        <NotificationBell />
         <div className="icon-pill wallet" onClick={() => navigate('/profile')}>
           ৳ {profile?.walletBalance ?? 0}
         </div>

@@ -12,6 +12,7 @@ import Matches from './pages/Matches'
 import Leaderboard from './pages/Leaderboard'
 import Profile from './pages/Profile'
 import TransactionHistory from './pages/TransactionHistory'
+import Notifications from './pages/Notifications'
 import { useEffect, useState } from 'react'
 import Admin from './pages/Admin'
 import { ToastProvider } from './components/ToastContext'
@@ -111,6 +112,16 @@ export default function App() {
           <ProtectedRoute>
             <AppShell>
               <TransactionHistory />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <Notifications />
             </AppShell>
           </ProtectedRoute>
         }
