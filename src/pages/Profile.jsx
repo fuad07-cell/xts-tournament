@@ -8,6 +8,214 @@ import { useToast } from '../components/ToastContext'
 
 const DIAL_CODES = { bKash: '*247#', Nagad: '*167#', Rocket: '*322#' }
 
+// ---------------------------------------------------------------------------
+// Premium menu icon system — original, hand-drawn line icons (no icon
+// library, no emoji), each with its own gradient theme, glass layer, inner
+// highlight, breathing glow, floating motion and a hover shine sweep.
+// ---------------------------------------------------------------------------
+
+const ICON_THEME = {
+  history:     { g1: '#123A57', g2: '#19A7E0', glow: 'rgba(25,167,224,0.5)',  accent: '#CFF3FF' }, // luxury fintech blue
+  edit:        { g1: '#3B1768', g2: '#A855F7', glow: 'rgba(168,85,247,0.5)', accent: '#F1E4FF' }, // elegant violet
+  invite:      { g1: '#054C3E', g2: '#22C08C', glow: 'rgba(34,192,140,0.5)', accent: '#D6FBEC' }, // friendly emerald
+  leaderboard: { g1: '#6B2A05', g2: '#F5A524', glow: 'rgba(245,165,36,0.55)',accent: '#FFEBC2' }, // premium gold trophy
+  payment:     { g1: '#0B3B4C', g2: '#22B8CF', glow: 'rgba(34,184,207,0.5)', accent: '#D2F6FC' }, // cyan settings
+  admin:       { g1: '#241B5E', g2: '#6C63FF', glow: 'rgba(108,99,255,0.5)',accent: '#E1DFFF' }, // deep indigo shield
+  theme:       { g1: '#161244', g2: '#7C89F2', glow: 'rgba(124,137,242,0.5)',accent: '#E5E8FF' }, // midnight moon
+  dev:         { g1: '#4A0F63', g2: '#E64FD9', glow: 'rgba(230,79,217,0.5)',accent: '#FBDCFA' }, // futuristic magenta
+  language:    { g1: '#0B3D3A', g2: '#2CD9C5', glow: 'rgba(44,217,197,0.5)',accent: '#CFFBF5' }, // elegant globe teal
+  logout:      { g1: '#5B0F17', g2: '#F4405C', glow: 'rgba(244,64,92,0.55)',accent: '#FFD9DF' }, // premium power red
+}
+
+const ICON_SVG = {
+  history: (
+    <svg viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="6" width="18" height="13" rx="3.2" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M3.5 10.2h4.2l1.6-3.1 2.1 6.3 1.6-3.2h7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="17.6" cy="14.6" r="1.35" fill="currentColor" />
+    </svg>
+  ),
+  edit: (
+    <svg viewBox="0 0 24 24" fill="none">
+      <rect x="2.8" y="5" width="13.6" height="10.4" rx="2.6" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="7.3" cy="9.2" r="1.45" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M5.1 12.7c.5-1.5 1.65-2.15 2.2-2.15s1.7.65 2.2 2.15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M12.7 8.8h1.9" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M17.6 12.1l3.05-3.05a1.28 1.28 0 0 1 1.8 1.8l-3.05 3.05-2.1.65.3-2.45z" fill="currentColor" />
+    </svg>
+  ),
+  invite: (
+    <svg viewBox="0 0 24 24" fill="none">
+      <circle cx="8.6" cy="8.6" r="2.55" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M3.6 18c.6-3 2.55-4.35 5-4.35s4.4 1.35 5 4.35" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="16.1" cy="7" r="1.75" stroke="currentColor" strokeWidth="1.35" opacity="0.85" />
+      <path d="M18.6 4.2l.62 1.3 1.3.6-1.3.6-.62 1.3-.6-1.3-1.3-.6 1.3-.6.6-1.3z" fill="currentColor" />
+    </svg>
+  ),
+  leaderboard: (
+    <svg viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="13.2" width="4.4" height="6.8" rx="1" stroke="currentColor" strokeWidth="1.55" />
+      <rect x="9.8" y="8.4" width="4.4" height="11.6" rx="1" stroke="currentColor" strokeWidth="1.55" />
+      <rect x="16.6" y="10.9" width="4.4" height="9.1" rx="1" stroke="currentColor" strokeWidth="1.55" />
+      <path d="M12 3.2l.95 1.95 2.15.3-1.55 1.55.37 2.15-1.92-1.02-1.92 1.02.37-2.15-1.55-1.55 2.15-.3.95-1.95z" fill="currentColor" />
+    </svg>
+  ),
+  payment: (
+    <svg viewBox="0 0 24 24" fill="none">
+      <rect x="2.4" y="6.1" width="13.6" height="9.8" rx="2.2" stroke="currentColor" strokeWidth="1.55" />
+      <path d="M2.4 9.5h13.6" stroke="currentColor" strokeWidth="1.55" />
+      <circle cx="18.1" cy="16.1" r="3.1" stroke="currentColor" strokeWidth="1.45" />
+      <path d="M18.1 14.2v.5M18.1 17.6v.5M16.2 16.1h.5M19.6 16.1h.5M16.85 14.85l.35.35M19.1 17.1l.35.35M19.35 14.85l-.35.35M17.2 17.1l-.35.35" stroke="currentColor" strokeWidth="1.05" strokeLinecap="round" />
+    </svg>
+  ),
+  admin: (
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M12 3.3l6.8 2.45v5.05c0 4.5-2.9 7.7-6.8 9.1-3.9-1.4-6.8-4.6-6.8-9.1V5.75L12 3.3z" stroke="currentColor" strokeWidth="1.55" strokeLinejoin="round" />
+      <path d="M8.9 12l2 2 4.1-4.5" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
+  theme: (
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M16.6 13.7A6.75 6.75 0 1 1 10.3 4.4a5.35 5.35 0 0 0 6.3 9.3z" stroke="currentColor" strokeWidth="1.55" strokeLinejoin="round" />
+      <path d="M18.55 5.1l.55 1.15 1.15.55-1.15.55-.55 1.15-.55-1.15-1.15-.55 1.15-.55.55-1.15z" fill="currentColor" />
+    </svg>
+  ),
+  dev: (
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M8.6 6.6L3.9 12l4.7 5.4" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M15.4 6.6l4.7 5.4-4.7 5.4" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="1.25" fill="currentColor" />
+    </svg>
+  ),
+  language: (
+    <svg viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="7.9" stroke="currentColor" strokeWidth="1.55" />
+      <path d="M4.1 12h15.8M12 4.1c2.35 2.2 3.55 5 3.55 7.9s-1.2 5.7-3.55 7.9c-2.35-2.2-3.55-5-3.55-7.9S9.65 6.3 12 4.1z" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  ),
+  logout: (
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M12 4.2v6.9" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+      <path d="M7.55 6.35a6.85 6.85 0 1 0 8.9 0" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  ),
+}
+
+function PremiumIcon({ variant }) {
+  const t = ICON_THEME[variant] || ICON_THEME.history
+  return (
+    <span
+      className={'picon picon-' + variant}
+      style={{ '--g1': t.g1, '--g2': t.g2, '--glow': t.glow, '--accent': t.accent }}
+    >
+      <span className="picon-float">
+        <span className="picon-glass" aria-hidden="true" />
+        <span className="picon-shine" aria-hidden="true" />
+        <span className="picon-svg">{ICON_SVG[variant] || ICON_SVG.history}</span>
+      </span>
+    </span>
+  )
+}
+
+function PremiumIconStyles() {
+  return (
+    <style>{`
+      .picon {
+        position: relative;
+        width: 46px;
+        height: 46px;
+        min-width: 46px;
+        border-radius: 15px;
+        flex-shrink: 0;
+        overflow: hidden;
+        background: linear-gradient(150deg, var(--g1) 0%, var(--g2) 100%);
+        box-shadow:
+          0 8px 16px -6px var(--glow),
+          0 2px 5px rgba(0,0,0,0.28),
+          inset 0 1px 1px rgba(255,255,255,0.4),
+          inset 0 -8px 12px rgba(0,0,0,0.22);
+        animation: picon-breathe 3.4s ease-in-out infinite;
+        transition: transform .4s cubic-bezier(.22,.9,.32,1.2), box-shadow .4s ease;
+      }
+      .menu-item-v2:hover .picon,
+      .picon:hover {
+        transform: scale(1.09) translateY(-2px);
+        box-shadow:
+          0 12px 22px -6px var(--glow),
+          0 3px 7px rgba(0,0,0,0.3),
+          inset 0 1px 1px rgba(255,255,255,0.48),
+          inset 0 -8px 12px rgba(0,0,0,0.2);
+      }
+      .picon-float {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: picon-drift 4.6s ease-in-out infinite;
+      }
+      .picon-glass {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(165deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.06) 38%, rgba(255,255,255,0) 60%);
+        mix-blend-mode: overlay;
+        pointer-events: none;
+      }
+      .picon-glass::after {
+        content: '';
+        position: absolute;
+        top: 3px; left: 4px; right: 4px;
+        height: 45%;
+        border-radius: 999px 999px 60% 60% / 100% 100% 30% 30%;
+        background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0));
+        opacity: 0.55;
+      }
+      .picon-shine {
+        position: absolute;
+        top: -60%;
+        left: -70%;
+        width: 45%;
+        height: 220%;
+        background: linear-gradient(115deg, transparent, rgba(255,255,255,0.65), transparent);
+        transform: rotate(18deg) translateX(-140%);
+        pointer-events: none;
+      }
+      .menu-item-v2:hover .picon-shine,
+      .picon:hover .picon-shine {
+        animation: picon-sweep 1.1s ease forwards;
+      }
+      .picon-svg {
+        position: relative;
+        z-index: 2;
+        width: 22px;
+        height: 22px;
+        color: var(--accent, #fff);
+        filter: drop-shadow(0 1px 1.5px rgba(0,0,0,0.4));
+      }
+      .picon-svg svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      @keyframes picon-drift {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-2.5px); }
+      }
+      @keyframes picon-breathe {
+        0%, 100% { filter: brightness(1) saturate(1); }
+        50% { filter: brightness(1.14) saturate(1.08); }
+      }
+      @keyframes picon-sweep {
+        from { transform: rotate(18deg) translateX(-140%); }
+        to   { transform: rotate(18deg) translateX(260%); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .picon, .picon-float { animation: none; }
+      }
+    `}</style>
+  )
+}
+
 export default function Profile() {
   const { user, profile, logout, refreshProfile, isAdmin } = useAuth()
   const navigate = useNavigate()
@@ -77,6 +285,7 @@ export default function Profile() {
 
   return (
     <div className="screen page-fade-in">
+      <PremiumIconStyles />
       {user && !user.emailVerified && user.providerData?.[0]?.providerId === 'password' && (
         <div
           style={{
@@ -166,7 +375,7 @@ export default function Profile() {
       <div className="menu-list-v2">
         {menuItems.filter((m) => !m.adminOnly || isAdmin).map((m) => (
           <button key={m.key} className="menu-item-v2" onClick={m.action}>
-            <span className={'menu-icon-box ' + m.color}>{m.icon}</span>
+            <PremiumIcon variant={m.key} />
             <span className="menu-text">
               <span className="menu-title">{m.title}</span>
               <span className="menu-sub">{m.sub}</span>
@@ -176,7 +385,7 @@ export default function Profile() {
         ))}
 
         <div className="menu-item-v2" style={{ cursor: 'default' }}>
-          <span className="menu-icon-box blue">🌓</span>
+          <PremiumIcon variant="theme" />
           <span className="menu-text">
             <span className="menu-title">Theme</span>
             <span className="menu-sub">Switch Light/Dark</span>
@@ -188,7 +397,7 @@ export default function Profile() {
         </div>
 
         <button className="menu-item-v2" onClick={() => setModal('dev')}>
-          <span className="menu-icon-box purple">{'</>'}</span>
+          <PremiumIcon variant="dev" />
           <span className="menu-text">
             <span className="menu-title">App Developer</span>
             <span className="menu-sub">View developer info</span>
@@ -197,7 +406,7 @@ export default function Profile() {
         </button>
 
         <button className="menu-item-v2" onClick={() => setModal('language')}>
-          <span className="menu-icon-box green">🌐</span>
+          <PremiumIcon variant="language" />
           <span className="menu-text">
             <span className="menu-title">Language</span>
             <span className="menu-sub">English / বাংলা</span>
@@ -206,7 +415,7 @@ export default function Profile() {
         </button>
 
         <button className="menu-item-v2 danger" onClick={logout}>
-          <span className="menu-icon-box red">⏻</span>
+          <PremiumIcon variant="logout" />
           <span className="menu-text">
             <span className="menu-title">Logout</span>
             <span className="menu-sub">Sign out of your account.</span>
