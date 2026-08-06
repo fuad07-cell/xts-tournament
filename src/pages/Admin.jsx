@@ -15,6 +15,7 @@ import {
 import { db } from '../firebase'
 import { useAuth, MAIN_ADMIN_UID } from '../context/AuthContext'
 import { CATEGORIES } from '../constants/categories'
+import { recordMatchResult } from '../leaderboardStats'
 import { logTransaction } from '../utils/transactions'
 import { useToast } from '../components/ToastContext'
 import { useConfirm } from '../components/ConfirmContext'
@@ -230,7 +231,8 @@ function ResultsPanel() {
   const confirmAction = useConfirm()
   const [results, setResults] = useState([])
   const [userCache, setUserCache] = useState({})
-  const [drafts, setDrafts] = useState({}) // resultId -> { finalKills, isWinner, prizeAmount }
+  const [tournamentCache, setTournamentCache] = useState({}) // tournamentId -> tournament data (prizeBreakdown এর জন্য)
+  const [drafts, setDrafts] = useState({}) // resultId -> { finalKills, finalPosition, isWinner, prizeAmount }
 
   useEffect(() => {
     const q = query(collection(db, 'matchResults'), where('status', '==', 'pending'))
@@ -251,6 +253,20 @@ function ResultsPanel() {
           )
           setUserCache((prev) => ({ ...prev, ...Object.fromEntries(entries) }))
         }
+
+        // BR ম্যাচের জন্য tournament-এর prizeBreakdown লাগবে, position অনুযায়ী prize suggest করতে
+        const missingT = [...new Set(list.filter((r) => r.category === 'br').map((r) => r.tournamentId))].filter(
+          (tid) => tid && !tournamentCache[tid]
+        )
+        if (missingT.length) {
+          const entries = await Promise.all(
+            missingT.map(async (tid) => {
+              const snap = await getDoc(doc(db, 'tournaments', tid))
+              return [tid, snap.exists() ? snap.data() : null]
+            })
+          )
+          setTournamentCache((prev) => ({ ...prev, ...Object.fromEntries(entries) }))
+        }
       },
       (err) => console.error('results fetch error:', err)
     )
@@ -258,18 +274,47 @@ function ResultsPanel() {
   }, [])
 
   function draftFor(r) {
-    return drafts[r.id] || { finalKills: r.claimedKills, isWinner: false, prizeAmount: '' }
+    return drafts[r.id] || { finalKills: r.claimedKills, finalPosition: r.claimedPosition ?? '', isWinner: false, prizeAmount: '' }
   }
   function setDraft(r, patch) {
     setDrafts((prev) => ({ ...prev, [r.id]: { ...draftFor(r), ...patch } }))
   }
 
+  // BR ম্যাচে position দিলে ওই tournament-এর prizeBreakdown থেকে prize auto suggest করা
+  function suggestPrizeForPosition(tournament, position) {
+    if (!tournament || !tournament.prizeBreakdown) return ''
+    const map = { 1: 'winner', 2: 'second', 3: 'third', 4: 'fourth', 5: 'fifth' }
+    const key = map[Number(position)]
+    return key ? (tournament.prizeBreakdown[key] || 0) : 0
+  }
+  function onPositionChange(r, value) {
+    const tournament = tournamentCache[r.tournamentId]
+    const suggested = suggestPrizeForPosition(tournament, value)
+    setDraft(r, { finalPosition: value, prizeAmount: suggested === '' ? draftFor(r).prizeAmount : suggested })
+  }
+
   async function approve(r) {
     const d = draftFor(r)
     const finalKills = Number(d.finalKills) || 0
-    const prizeAmount = Number(d.prizeAmount) || 0
+    const isBr = r.category === 'br'
 
-    if (!(await confirmAction(`Kills: ${finalKills}, ${d.isWinner ? 'জয়ী' : 'পরাজিত'}${d.isWinner && prizeAmount ? `, Prize ৳${prizeAmount}` : ''} — Approve করবেন?`))) return
+    let finalPosition = null
+    let isWinner = d.isWinner
+    let prizeAmount = Number(d.prizeAmount) || 0
+
+    if (isBr) {
+      finalPosition = Number(d.finalPosition) || 0
+      if (!finalPosition) return showToast('error', 'Final Position দিন')
+      isWinner = finalPosition === 1
+    }
+
+    // non-BR ম্যাচে prize শুধু isWinner হলেই দেয়া হয়; BR ম্যাচে position অনুযায়ী prize (২য়/৩য় position-ও prize পেতে পারে)
+    const finalPrize = isBr ? prizeAmount : (isWinner ? prizeAmount : 0)
+
+    const confirmMsg = isBr
+      ? `Kills: ${finalKills}, Position: ${finalPosition}${finalPrize ? `, Prize ৳${finalPrize}` : ''} — Approve করবেন?`
+      : `Kills: ${finalKills}, ${isWinner ? 'জয়ী' : 'পরাজিত'}${isWinner && finalPrize ? `, Prize ৳${finalPrize}` : ''} — Approve করবেন?`
+    if (!(await confirmAction(confirmMsg))) return
 
     try {
       const resultRef = doc(db, 'matchResults', r.id)
@@ -283,31 +328,47 @@ function ResultsPanel() {
         tx.update(resultRef, {
           status: 'approved',
           finalKills,
-          isWinner: d.isWinner,
-          prizeAmount: d.isWinner ? prizeAmount : 0,
+          ...(isBr ? { finalPosition } : {}),
+          isWinner,
+          prizeAmount: finalPrize,
           reviewedAt: serverTimestamp(),
         })
         tx.update(entryRef, { status: 'completed' })
         tx.update(userRef, {
           kills: (u.kills || 0) + finalKills,
-          wins: (u.wins || 0) + (d.isWinner ? 1 : 0),
-          walletBalance: (u.walletBalance || 0) + (d.isWinner ? prizeAmount : 0),
-          winningBalance: (u.winningBalance || 0) + (d.isWinner ? prizeAmount : 0),
+          wins: (u.wins || 0) + (isWinner ? 1 : 0),
+          walletBalance: (u.walletBalance || 0) + finalPrize,
+          winningBalance: (u.winningBalance || 0) + finalPrize,
         })
       })
 
-      if (d.isWinner && prizeAmount > 0) {
+      if (finalPrize > 0) {
         try {
           await logTransaction(r.userId, {
             type: 'prize',
-            amount: prizeAmount,
+            amount: finalPrize,
             title: 'Match Prize',
-            subtitle: `${finalKills} kills • Result approved`,
+            subtitle: isBr ? `${finalKills} kills • Position ${finalPosition} • Result approved` : `${finalKills} kills • Result approved`,
           })
         } catch (logErr) {
           console.warn('transaction log failed (non-blocking):', logErr)
         }
       }
+
+      // উপরের transaction ইতিমধ্যে kills/wins/walletBalance বাড়িয়েছে, কিন্তু
+      // Leaderboard যেই weekly/monthly/allTime ফিল্ড (weeklyWins, allTimeKills...)
+      // পড়ে, সেগুলো আলাদাভাবে leaderboardStats.js-এর recordMatchResult() না
+      // চালালে কখনো তৈরি/আপডেট হয় না — এটাই Leaderboard খালি দেখানোর কারণ ছিল।
+      try {
+        await recordMatchResult(r.userId, {
+          won: isWinner,
+          kills: finalKills,
+          earnings: finalPrize,
+        })
+      } catch (statsErr) {
+        console.warn('leaderboard stats update failed (non-blocking):', statsErr)
+      }
+
       showToast('success', 'Result Approve করা হয়েছে')
     } catch (err) {
       showToast('error', 'সমস্যা হয়েছে: ' + err.message)
@@ -351,22 +412,40 @@ function ResultsPanel() {
             <img src={r.screenshotURL} alt="result screenshot" className="result-screenshot" onClick={() => window.open(r.screenshotURL, '_blank')} />
 
             <div className="admin-row"><span>User-এর দাবি করা Kills</span><span>{r.claimedKills}</span></div>
+            {r.category === 'br' && (
+              <div className="admin-row"><span>User-এর দাবি করা Position</span><span>{r.claimedPosition ?? '—'}</span></div>
+            )}
 
             <div className="field" style={{ flex: 1 }}>
               <label>Final Kills (verify করে বসান)</label>
               <input type="number" value={d.finalKills} onChange={(e) => setDraft(r, { finalKills: e.target.value })} />
             </div>
 
-            <div className="toggle-row">
-              <div className={'toggle-btn' + (!d.isWinner ? ' active' : '')} onClick={() => setDraft(r, { isWinner: false })}>হেরেছে</div>
-              <div className={'toggle-btn' + (d.isWinner ? ' active' : '')} onClick={() => setDraft(r, { isWinner: true })}>জিতেছে 🏆</div>
-            </div>
+            {r.category === 'br' ? (
+              <>
+                <div className="field" style={{ flex: 1 }}>
+                  <label>Final Position (verify করে বসান, ১ = Winner)</label>
+                  <input type="number" min="1" value={d.finalPosition} onChange={(e) => onPositionChange(r, e.target.value)} placeholder="1" />
+                </div>
+                <div className="field" style={{ flex: 1 }}>
+                  <label>Prize Amount (৳) — Tournament-এর Prize Breakdown থেকে auto বসেছে, চাইলে বদলান</label>
+                  <input type="number" value={d.prizeAmount} onChange={(e) => setDraft(r, { prizeAmount: e.target.value })} placeholder="0" />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="toggle-row">
+                  <div className={'toggle-btn' + (!d.isWinner ? ' active' : '')} onClick={() => setDraft(r, { isWinner: false })}>হেরেছে</div>
+                  <div className={'toggle-btn' + (d.isWinner ? ' active' : '')} onClick={() => setDraft(r, { isWinner: true })}>জিতেছে 🏆</div>
+                </div>
 
-            {d.isWinner && (
-              <div className="field" style={{ flex: 1 }}>
-                <label>Prize Amount (৳)</label>
-                <input type="number" value={d.prizeAmount} onChange={(e) => setDraft(r, { prizeAmount: e.target.value })} placeholder="0" />
-              </div>
+                {d.isWinner && (
+                  <div className="field" style={{ flex: 1 }}>
+                    <label>Prize Amount (৳)</label>
+                    <input type="number" value={d.prizeAmount} onChange={(e) => setDraft(r, { prizeAmount: e.target.value })} placeholder="0" />
+                  </div>
+                )}
+              </>
             )}
 
             <div className="admin-actions">
