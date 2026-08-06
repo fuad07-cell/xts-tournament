@@ -76,6 +76,12 @@ export function useJoinMatch() {
           teammateIgn: teammateIgn || null,
           status: 'joined',
           joinedAt: serverTimestamp(),
+          // Matches.jsx এর determineStatus() এর জন্য দরকার
+          date: t.date || null,
+          time: t.time || null,
+          map: t.map || null,
+          prizePool: t.prizePool || 0,
+          submissionDeadline: t.submissionDeadline || '01:00',
         })
       })
       await refreshProfile()

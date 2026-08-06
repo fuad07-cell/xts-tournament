@@ -13,10 +13,10 @@ function determineStatus(entry, result) {
 
   const now = Date.now()
 
-  // Parse match start time
-  const matchDateStr = entry.date       // "2025-01-15" format from Firestore
-  const matchTimeStr = entry.time       // "20:30" format from Firestore
-  if (!matchDateStr || !matchTimeStr) return 'expired'
+  // entry তে না থাকলে tournamentData থেকে নাও (পুরনো entries এর জন্য)
+  const matchDateStr = entry.date || entry.tournamentData?.date
+  const matchTimeStr = entry.time || entry.tournamentData?.time
+  if (!matchDateStr || !matchTimeStr) return 'upcoming'
 
   const [year, month, day] = matchDateStr.split('-').map(Number)
   const [hours, minutes] = matchTimeStr.split(':').map(Number)
@@ -94,24 +94,23 @@ function StatusBadge({ status }) {
   const { label, bg, border, color, dot, glow } = getStatusMeta(status)
   return (
     <span
-      className="inline-flex items-center gap-1.5 font-bold whitespace-nowrap"
       style={{
-        fontSize: 10,
-        letterSpacing: '0.06em',
-        padding: '4px 9px',
-        borderRadius: 999,
-        background: bg,
-        border: `1px solid ${border}`,
-        color,
+        display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0,
+        fontSize: 9.5, letterSpacing: '0.08em', fontWeight: 800,
+        padding: '4px 10px', borderRadius: 999,
+        background: bg, border: `1px solid ${border}`, color,
+        fontFamily: "'Rajdhani', sans-serif",
         animation: glow ? 'badgeGlow 1.8s ease-in-out infinite' : 'none',
+        whiteSpace: 'nowrap',
       }}
     >
-      <span
-        style={{
-          width: 5, height: 5, borderRadius: '50%', background: dot,
+      <span style={{ position: 'relative', width: 6, height: 6, flexShrink: 0 }}>
+        {glow && <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: dot, animation: 'liveRing 1.4s ease-out infinite' }} />}
+        <span style={{
+          display: 'block', width: 6, height: 6, borderRadius: '50%', background: dot, position: 'relative', zIndex: 1,
           animation: glow ? 'dotBlink 1.8s ease-in-out infinite' : 'none',
-        }}
-      />
+        }} />
+      </span>
       {label}
     </span>
   )
@@ -282,155 +281,191 @@ function MatchCard({ match, index, onSubmitResult }) {
   const visual = getCategoryVisual(match.category)
   const bannerImage = visual.image
 
+  const statusBorder = {
+    live: 'rgba(255,92,92,0.3)',
+    upcoming: 'rgba(245,166,35,0.2)',
+    completed: 'rgba(61,220,132,0.2)',
+    expired: 'rgba(255,255,255,0.06)',
+  }[status] || 'rgba(255,255,255,0.06)'
+
+  const statusTopLine = {
+    live: 'linear-gradient(90deg, #FF5C5C, transparent)',
+    upcoming: 'linear-gradient(90deg, #F5A623, transparent)',
+    completed: 'linear-gradient(90deg, #3DDC84, transparent)',
+    expired: 'linear-gradient(90deg, #4A5270, transparent)',
+  }[status] || 'none'
+
   return (
     <div
       className="match-card"
       style={{
         marginBottom: 14,
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'stretch',
-        borderRadius: 16,
+        borderRadius: 20,
         overflow: 'hidden',
-        background: 'rgba(22,27,46,0.6)',
-        backdropFilter: 'blur(14px)',
-        WebkitBackdropFilter: 'blur(14px)',
-        border: '1px solid rgba(148,163,184,0.14)',
-        boxShadow: '0 6px 20px rgba(0,0,0,0.28)',
-        animation: 'slideUp 0.4s ease-out',
-        animationDelay: `${index * 0.06}s`,
+        background: 'rgba(13,18,32,0.9)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: `1px solid ${statusBorder}`,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+        animation: 'slideUp 0.4s cubic-bezier(0.34,1.56,0.64,1)',
+        animationDelay: `${index * 0.07}s`,
         animationFillMode: 'both',
+        position: 'relative',
       }}
     >
-      {/* Banner — fixed 140x100, LEFT side only, never full-width, never on top */}
-      <div style={{ width: 140, height: 100, flexShrink: 0, margin: 8, borderRadius: 12, overflow: 'hidden' }}>
-        {bannerImage ? (
-          <img
-            src={bannerImage}
-            alt={match.title || visual.label}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          />
-        ) : (
-          <div
-            className="bg-slate-800"
-            style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}
-          >
-            🎮
-          </div>
-        )}
-      </div>
+      {/* Top accent line */}
+      <div style={{ height: 2, background: statusTopLine, width: '100%' }} />
 
-      {/* Right Side — takes remaining width, holds all content */}
-      <div className="min-w-0" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '10px 12px 10px 0', gap: 7 }}>
-        {/* Header row: title (left) + status badge (top-right) */}
-        <div className="flex justify-between items-start gap-2">
-          <div className="min-w-0">
-            <h3 className="text-white font-bold text-sm truncate" style={{ lineHeight: 1.25, letterSpacing: '0.01em' }}>
-              {match.title || match.tournamentName || 'টুর্নামেন্ট'}
-            </h3>
-            <p className="text-gray-400 truncate" style={{ fontSize: 11, marginTop: 3 }}>
-              {visual.label}{match.map ? ` • ${match.map}` : ''}
-            </p>
-          </div>
-          <StatusBadge status={status} />
-        </div>
-
-        {/* Entry Fee / Prize Pool / Date / Time — 2x2 grid */}
-        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
-          <div>
-            <p className="text-gray-500" style={{ fontSize: 10, letterSpacing: '0.03em' }}>Entry Fee</p>
-            <p className="text-yellow-400 font-bold" style={{ fontSize: 13 }}>৳{match.entryFee}</p>
-          </div>
-          <div>
-            <p className="text-gray-500" style={{ fontSize: 10, letterSpacing: '0.03em' }}>Prize Pool</p>
-            <p className="text-green-400 font-bold" style={{ fontSize: 13 }}>৳{(match.prizePool || 0).toLocaleString()}</p>
-          </div>
-          <div>
-            <p className="text-gray-500" style={{ fontSize: 10, letterSpacing: '0.03em' }}>Date</p>
-            <p className="text-white" style={{ fontSize: 12, fontWeight: 600 }}>{formatDateDisplay(match.date)}</p>
-          </div>
-          <div>
-            <p className="text-gray-500" style={{ fontSize: 10, letterSpacing: '0.03em' }}>Start Time</p>
-            <p className="text-white" style={{ fontSize: 12, fontWeight: 600 }}>{match.time}</p>
+      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'stretch' }}>
+        {/* Banner */}
+        <div style={{ width: 130, flexShrink: 0, margin: '12px 0 12px 12px', borderRadius: 14, overflow: 'hidden', position: 'relative' }}>
+          {bannerImage ? (
+            <img
+              src={bannerImage}
+              alt={match.title || visual.label}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', minHeight: 110 }}
+            />
+          ) : (
+            <div style={{
+              width: '100%', height: '100%', minHeight: 110,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 28, background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.06)',
+            }}>
+              🎮
+            </div>
+          )}
+          {/* Category label overlay */}
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            padding: '14px 6px 5px',
+            background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+            fontSize: 9, fontWeight: 800, color: 'rgba(255,255,255,0.8)',
+            textAlign: 'center', letterSpacing: '0.08em', textTransform: 'uppercase',
+            fontFamily: "'Rajdhani', sans-serif",
+          }}>
+            {visual.label}
           </div>
         </div>
 
-        {/* Room ID / Password — only shown when available */}
-        {(status === 'live' || status === 'upcoming') && match.roomId && (
-          <div
-            className="flex items-center gap-3 flex-wrap"
-            style={{
-              fontSize: 11, padding: '6px 9px', borderRadius: 10,
-              background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(148,163,184,0.14)',
-            }}
-          >
-            <span className="text-gray-400">
-              Room ID: <span className="text-white font-mono font-semibold">{match.roomId}</span>
-            </span>
-            {match.roomPassword && (
-              <span className="text-gray-400">
-                Pass: <span className="text-white font-mono font-semibold">{match.roomPassword}</span>
+        {/* Right content */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', padding: '12px 14px 12px 10px', gap: 8 }}>
+          {/* Title + badge */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+            <div style={{ minWidth: 0 }}>
+              <h3 style={{
+                margin: 0, fontSize: 14, fontWeight: 800, color: '#fff',
+                letterSpacing: '0.01em', lineHeight: 1.25,
+                fontFamily: "'Rajdhani', sans-serif",
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>
+                {match.title || match.tournamentName || 'টুর্নামেন্ট'}
+              </h3>
+              <p style={{ margin: '3px 0 0', fontSize: 10.5, color: '#4A5270', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {match.map ? `${match.map}` : ''}
+              </p>
+            </div>
+            <StatusBadge status={status} />
+          </div>
+
+          {/* Stats grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 10px' }}>
+            <div>
+              <p style={{ margin: 0, fontSize: 9.5, color: '#3D4560', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Entry Fee</p>
+              <p style={{ margin: '2px 0 0', fontSize: 13.5, fontWeight: 800, color: '#F5A623', fontFamily: "'Rajdhani', sans-serif" }}>৳{match.entryFee}</p>
+            </div>
+            <div>
+              <p style={{ margin: 0, fontSize: 9.5, color: '#3D4560', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Prize Pool</p>
+              <p style={{ margin: '2px 0 0', fontSize: 13.5, fontWeight: 800, color: '#3DDC84', fontFamily: "'Rajdhani', sans-serif" }}>৳{(match.prizePool || 0).toLocaleString()}</p>
+            </div>
+            <div>
+              <p style={{ margin: 0, fontSize: 9.5, color: '#3D4560', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Date</p>
+              <p style={{ margin: '2px 0 0', fontSize: 12, fontWeight: 600, color: '#C8D0E0' }}>{formatDateDisplay(match.date || match.tournamentData?.date)}</p>
+            </div>
+            <div>
+              <p style={{ margin: 0, fontSize: 9.5, color: '#3D4560', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Start Time</p>
+              <p style={{ margin: '2px 0 0', fontSize: 12, fontWeight: 600, color: '#C8D0E0' }}>{match.time || match.tournamentData?.time || '—'}</p>
+            </div>
+          </div>
+
+          {/* Room ID row */}
+          {(status === 'live' || status === 'upcoming') && match.roomId && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+              padding: '7px 10px', borderRadius: 10,
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
+            }}>
+              <span style={{ fontSize: 10.5, color: '#4A5270', fontWeight: 600 }}>
+                Room: <span style={{ color: '#fff', fontFamily: 'monospace', fontWeight: 700 }}>{match.roomId}</span>
               </span>
+              {match.roomPassword && (
+                <span style={{ fontSize: 10.5, color: '#4A5270', fontWeight: 600 }}>
+                  Pass: <span style={{ color: '#fff', fontFamily: 'monospace', fontWeight: 700 }}>{match.roomPassword}</span>
+                </span>
+              )}
+              <button
+                onClick={() => copyToClipboard(`${match.roomId}${match.roomPassword ? ' / ' + match.roomPassword : ''}`, 'room')}
+                className="copy-btn"
+                style={{ marginLeft: 'auto', fontSize: 14, color: '#F5A623', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                {copiedField === 'room' ? '✓' : '📋'}
+              </button>
+            </div>
+          )}
+
+          {/* Action row */}
+          <div style={{ marginTop: 'auto' }}>
+            {status === 'live' && !match.result && (
+              <button
+                onClick={() => onSubmitResult(match)}
+                className="submit-live-btn"
+                style={{
+                  width: '100%', padding: '10px 0', fontSize: 13, fontWeight: 800,
+                  borderRadius: 12, border: 'none', cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #F5C518, #FF8C00)',
+                  color: '#0A0E17', fontFamily: "'Rajdhani', sans-serif",
+                  letterSpacing: '0.04em',
+                }}
+              >
+                ⚡ SUBMIT RESULT
+              </button>
             )}
-            <button
-              onClick={() => copyToClipboard(`${match.roomId}${match.roomPassword ? ' / ' + match.roomPassword : ''}`, 'room')}
-              className="ml-auto text-yellow-400 copy-btn"
-            >
-              {copiedField === 'room' ? '✓' : '📋'}
-            </button>
+
+            {status === 'live' && match.result && match.result.status !== 'rejected' && (
+              <div style={{ width: '100%', textAlign: 'center', padding: '10px 0', fontSize: 12.5, fontWeight: 800, borderRadius: 12, background: 'rgba(61,220,132,0.1)', color: '#3DDC84', border: '1px solid rgba(61,220,132,0.25)', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.04em' }}>
+                ✓ RESULT SUBMITTED
+              </div>
+            )}
+
+            {status === 'live' && match.result && match.result.status === 'rejected' && (
+              <div style={{ width: '100%', textAlign: 'center', padding: '10px 0', fontSize: 12.5, fontWeight: 800, borderRadius: 12, background: 'rgba(255,92,92,0.1)', color: '#FF5C5C', border: '1px solid rgba(255,92,92,0.25)', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.04em' }}>
+                ✕ NOT APPROVED
+              </div>
+            )}
+
+            {status === 'upcoming' && matchStartMs > 0 && (
+              <div style={{
+                textAlign: 'center', padding: '9px 0', borderRadius: 12,
+                background: 'rgba(245,166,35,0.08)', border: '1px solid rgba(245,166,35,0.2)',
+                fontSize: 12.5, fontWeight: 700, color: '#F5A623',
+                fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.03em',
+              }}>
+                ⏱ Starts In: <CountdownTimer targetMs={matchStartMs} />
+              </div>
+            )}
+
+            {status === 'completed' && (
+              <div style={{ width: '100%', textAlign: 'center', padding: '10px 0', fontSize: 12.5, fontWeight: 800, borderRadius: 12, background: 'rgba(61,220,132,0.1)', color: '#3DDC84', border: '1px solid rgba(61,220,132,0.25)', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.04em' }}>
+                🏆 COMPLETED{match.result?.status === 'approved' && isBr && match.result.finalPosition ? ` · #${match.result.finalPosition}` : ''}
+              </div>
+            )}
+
+            {status === 'expired' && (
+              <div style={{ width: '100%', textAlign: 'center', padding: '10px 0', fontSize: 12.5, fontWeight: 700, borderRadius: 12, background: 'rgba(255,255,255,0.04)', color: '#3D4560', border: '1px solid rgba(255,255,255,0.06)', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.04em' }}>
+                SUBMISSION CLOSED
+              </div>
+            )}
           </div>
-        )}
-
-        {/* Bottom action — spans the width of the right section only */}
-        <div style={{ marginTop: 'auto' }}>
-          {/* LIVE + not submitted → soft breathing glow Submit button */}
-          {status === 'live' && !match.result && (
-            <button
-              onClick={() => onSubmitResult(match)}
-              className="w-full submit-live-btn"
-              style={{
-                padding: '8px 0', fontSize: 13, fontWeight: 700, borderRadius: 10,
-                background: '#F5C518', color: '#0A0E17', border: 'none', cursor: 'pointer',
-              }}
-            >
-              Submit Result
-            </button>
-          )}
-
-          {/* LIVE + submitted → simple "Submitted" pill (rejected stays distinct) — no animation once submitted */}
-          {status === 'live' && match.result && match.result.status !== 'rejected' && (
-            <div className="w-full text-center font-bold" style={{ padding: '8px 0', fontSize: 13, borderRadius: 10, background: 'rgba(34,197,94,0.16)', color: '#3DDC84', border: '1px solid rgba(34,197,94,0.35)' }}>
-              ✓ Result Submitted
-            </div>
-          )}
-
-          {status === 'live' && match.result && match.result.status === 'rejected' && (
-            <div className="w-full text-center font-bold" style={{ padding: '8px 0', fontSize: 13, borderRadius: 10, background: 'rgba(239,68,68,0.16)', color: '#FF5C5C', border: '1px solid rgba(239,68,68,0.35)' }}>
-              ✕ Not Approved
-            </div>
-          )}
-
-          {status === 'upcoming' && matchStartMs > 0 && (
-            <div
-              className="text-center font-semibold"
-              style={{ fontSize: 12, padding: '8px 0', borderRadius: 10, background: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.25)' }}
-            >
-              Starts In: <CountdownTimer targetMs={matchStartMs} />
-            </div>
-          )}
-
-          {status === 'completed' && (
-            <div className="w-full text-center font-bold" style={{ padding: '8px 0', fontSize: 13, borderRadius: 10, background: 'rgba(34,197,94,0.16)', color: '#3DDC84', border: '1px solid rgba(34,197,94,0.35)' }}>
-              ✓ Result Submitted
-              {match.result && match.result.status === 'approved' && isBr && match.result.finalPosition ? ` · #${match.result.finalPosition}` : ''}
-            </div>
-          )}
-
-          {status === 'expired' && (
-            <div className="w-full text-center font-bold" style={{ padding: '8px 0', fontSize: 13, borderRadius: 10, background: 'rgba(148,163,184,0.12)', color: '#94A3B8', border: '1px solid rgba(148,163,184,0.3)' }}>
-              Submission Closed
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -636,37 +671,38 @@ function SubmitResultModal({ entry, userId, onClose }) {
 // ============================================================
 function SectionHeader({ status, count, onViewAll }) {
   const configs = {
-    live:      { label: 'LIVE MATCHES',      dot: 'bg-red-500' },
-    upcoming:  { label: 'UPCOMING MATCHES',  dot: 'bg-yellow-500' },
-    completed: { label: 'COMPLETED MATCHES', dot: 'bg-green-500' },
-    expired:   { label: 'EXPIRED MATCHES',   dot: 'bg-slate-500' },
+    live:      { label: 'LIVE MATCHES',      color: '#FF5C5C', bg: 'rgba(255,92,92,0.12)', dot: '#FF3B3B' },
+    upcoming:  { label: 'UPCOMING MATCHES',  color: '#F5A623', bg: 'rgba(245,166,35,0.1)', dot: '#F5A623' },
+    completed: { label: 'COMPLETED MATCHES', color: '#3DDC84', bg: 'rgba(61,220,132,0.1)', dot: '#3DDC84' },
+    expired:   { label: 'EXPIRED MATCHES',   color: '#4A5270', bg: 'rgba(255,255,255,0.05)', dot: '#4A5270' },
   }
   const c = configs[status]
   if (!c) return null
 
   return (
-    <div className="flex items-center justify-between" style={{ marginTop: 22, marginBottom: 12 }}>
-      <div className="flex items-center gap-2.5">
-        <span className={`inline-block h-2 w-2 rounded-full ${c.dot}`} style={{ boxShadow: '0 0 6px currentColor' }} />
-        <span className="uppercase font-bold text-white" style={{ fontSize: 12.5, letterSpacing: '0.06em' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 28, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {/* Colored rule */}
+        <div style={{ width: 3, height: 16, borderRadius: 999, background: c.dot, boxShadow: `0 0 8px ${c.dot}` }} />
+        <span style={{
+          fontSize: 11, fontWeight: 800, color: c.color, letterSpacing: '0.1em',
+          fontFamily: "'Rajdhani', sans-serif",
+        }}>
           {c.label}
         </span>
-        <span
-          className="font-bold"
-          style={{
-            fontSize: 11, padding: '1px 8px', borderRadius: 999,
-            background: 'rgba(148,163,184,0.14)', color: '#8892A8',
-          }}
-        >
+        <span style={{
+          fontSize: 10, fontWeight: 800, padding: '2px 8px', borderRadius: 999,
+          background: c.bg, color: c.color, border: `1px solid ${c.dot}30`,
+        }}>
           {count}
         </span>
       </div>
       <button
         onClick={onViewAll}
-        className="view-all-btn font-semibold"
-        style={{ fontSize: 12, color: '#F5A623', background: 'none', border: 'none', cursor: 'pointer' }}
+        className="view-all-btn"
+        style={{ fontSize: 11.5, fontWeight: 700, color: '#4A5270', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.04em' }}
       >
-        View All ›
+        VIEW ALL ›
       </button>
     </div>
   )
@@ -732,190 +768,253 @@ export default function Matches() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: 'radial-gradient(120% 80% at 50% 0%, #10162A 0%, #0B0F17 55%)', fontFamily: "'Rajdhani', sans-serif" }}>
-      {/* ===== CSS Keyframes & shared classes (injected once) ===== */}
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg, #080C18 0%, #0D1220 40%, #080C18 100%)', fontFamily: "'Rajdhani', 'Inter', sans-serif", paddingBottom: 80 }}>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
         @keyframes slideUp {
-          from { opacity: 0; transform: translateY(16px); }
+          from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        @keyframes shimmer {
-          0%   { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
+        @keyframes fadeIn {
+          from { opacity: 0; } to { opacity: 1; }
         }
-        @keyframes pulseGlow {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
+        @keyframes shimmerMove {
+          0%   { background-position: -400% 0; }
+          100% { background-position: 400% 0; }
         }
-        /* Soft breathing glow for LIVE badge dot */
         @keyframes dotBlink {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50%      { opacity: 0.45; transform: scale(0.85); }
+          0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 6px #FF3B3B; }
+          50%      { opacity: 0.5; transform: scale(0.8); box-shadow: 0 0 2px #FF3B3B; }
         }
-        /* Soft glow pulse around the LIVE status badge */
         @keyframes badgeGlow {
           0%, 100% { box-shadow: 0 0 0 rgba(239,68,68,0); }
-          50%      { box-shadow: 0 0 10px rgba(239,68,68,0.45); }
+          50%      { box-shadow: 0 0 14px rgba(239,68,68,0.5), 0 0 30px rgba(239,68,68,0.15); }
         }
-        /* Premium breathing glow + gentle scale for the Submit Result button (LIVE only) */
-        @keyframes submitBreathe {
+        @keyframes submitPulse {
           0%, 100% {
-            box-shadow: 0 0 0 rgba(245,197,24,0.35), 0 4px 14px rgba(0,0,0,0.3);
+            box-shadow: 0 0 0 0 rgba(245,197,24,0.5), 0 6px 20px rgba(245,166,35,0.3);
             transform: scale(1);
           }
           50% {
-            box-shadow: 0 0 22px rgba(245,197,24,0.75), 0 4px 18px rgba(0,0,0,0.3);
-            transform: scale(1.03);
+            box-shadow: 0 0 0 8px rgba(245,197,24,0), 0 6px 28px rgba(245,166,35,0.55);
+            transform: scale(1.015);
           }
         }
-        .animate-ping {
-          animation: pulseGlow 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+        @keyframes liveRing {
+          0% { transform: scale(1); opacity: 0.6; }
+          100% { transform: scale(2.2); opacity: 0; }
         }
-        .submit-live-btn {
-          animation: submitBreathe 1.8s ease-in-out infinite;
-          transition: filter 0.2s ease, transform 0.2s ease;
+        @keyframes countdownPop {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.7; }
         }
-        .submit-live-btn:hover {
-          filter: brightness(1.08);
-        }
-        .submit-live-btn:active {
-          transform: scale(0.98);
-        }
+
         .match-card {
-          transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+          transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease, border-color 0.3s ease;
         }
         .match-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 12px 30px rgba(0,0,0,0.4);
-          border-color: rgba(245,166,35,0.25) !important;
+          transform: translateY(-3px) scale(1.005);
+          box-shadow: 0 20px 50px rgba(0,0,0,0.55), 0 0 0 1px rgba(245,166,35,0.2) !important;
+        }
+        .match-card:active {
+          transform: translateY(-1px) scale(1.002);
         }
         .filter-tab {
-          transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+          transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1);
+          white-space: nowrap;
         }
         .filter-tab:hover {
-          transform: translateY(-1px);
+          transform: translateY(-2px);
         }
-        .copy-btn, .view-all-btn {
-          transition: opacity 0.2s ease, transform 0.15s ease;
+        .filter-tab:active {
+          transform: translateY(0);
         }
-        .copy-btn:hover, .view-all-btn:hover {
-          opacity: 0.75;
+        .submit-live-btn {
+          animation: submitPulse 2s ease-in-out infinite;
+          transition: filter 0.2s ease, transform 0.15s ease;
         }
-        .search-input::placeholder {
-          color: #5C6580;
+        .submit-live-btn:hover {
+          filter: brightness(1.1);
+          animation-play-state: paused;
         }
+        .submit-live-btn:active {
+          transform: scale(0.97) !important;
+        }
+        .copy-btn {
+          transition: all 0.2s ease;
+        }
+        .copy-btn:hover { opacity: 0.75; transform: scale(1.1); }
+        .view-all-btn {
+          transition: all 0.2s ease;
+          position: relative;
+        }
+        .view-all-btn:hover { color: #FFD166 !important; }
+        .search-input::placeholder { color: #3D4560; }
         .search-input:focus {
-          border-color: rgba(245,166,35,0.45) !important;
-          box-shadow: 0 0 0 3px rgba(245,166,35,0.12);
+          border-color: rgba(245,166,35,0.5) !important;
+          box-shadow: 0 0 0 3px rgba(245,166,35,0.1), 0 2px 20px rgba(0,0,0,0.3) !important;
+          outline: none;
+        }
+        .shimmer-skeleton {
+          background: linear-gradient(90deg, #131929 25%, #1A2240 50%, #131929 75%);
+          background-size: 400% 100%;
+          animation: shimmerMove 1.8s ease-in-out infinite;
+        }
+        .live-ring {
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          background: #FF3B3B;
+          animation: liveRing 1.4s ease-out infinite;
         }
       `}</style>
 
-      {/* Header */}
+      {/* ── HEADER ── */}
       <div
         className="sticky top-0 z-40"
         style={{
-          background: 'rgba(11,15,23,0.78)',
-          backdropFilter: 'blur(18px)',
-          WebkitBackdropFilter: 'blur(18px)',
-          borderBottom: '1px solid rgba(148,163,184,0.12)',
-          padding: '18px 20px 14px',
+          background: 'rgba(8,12,24,0.85)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          padding: '20px 20px 16px',
         }}
       >
-        <div className="max-w-2xl mx-auto" style={{ maxWidth: 672 }}>
-          <div className="flex items-center justify-between">
+        <div style={{ maxWidth: 680, margin: '0 auto' }}>
+          {/* Title row */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
-              <h1 style={{ fontSize: 24, fontWeight: 800, color: '#fff', margin: 0, lineHeight: 1.2, letterSpacing: '0.01em' }}>
-                🎮 আমার ম্যাচ
-              </h1>
-              <p style={{ fontSize: 12.5, color: '#8892A8', margin: '3px 0 0', fontWeight: 500 }}>
-                আপনার টুর্নামেন্ট ম্যাচ ট্র্যাক করুন
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                <span style={{ fontSize: 28, lineHeight: 1 }}>🎮</span>
+                <h1 style={{
+                  fontSize: 28, fontWeight: 800, color: '#fff', margin: 0,
+                  letterSpacing: '0.02em', lineHeight: 1.1,
+                  fontFamily: "'Rajdhani', sans-serif",
+                  background: 'linear-gradient(135deg, #fff 60%, rgba(245,166,35,0.8))',
+                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                }}>
+                  আমার ম্যাচ
+                </h1>
+              </div>
+              <p style={{ fontSize: 12, color: '#4A5270', margin: 0, fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                Tournament Match Tracker
               </p>
             </div>
-            <div
-              className="flex items-center gap-2"
-              style={{ padding: '6px 12px', borderRadius: 999, background: 'rgba(26,32,53,0.7)', border: '1px solid rgba(148,163,184,0.16)' }}
-            >
-              <div className="animate-ping" style={{ width: 7, height: 7, borderRadius: '50%', background: '#00E676' }} />
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#8892A8' }}>{counts.all} ম্যাচ</span>
+
+            {/* Live match count pill */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '8px 14px', borderRadius: 999,
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              backdropFilter: 'blur(12px)',
+            }}>
+              <div style={{ position: 'relative', width: 8, height: 8 }}>
+                <div className="live-ring" />
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00E676', position: 'relative', zIndex: 1 }} />
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: "'Rajdhani', sans-serif" }}>
+                {counts.all}
+              </span>
+              <span style={{ fontSize: 11, color: '#4A5270', fontWeight: 500 }}>MATCHES</span>
             </div>
           </div>
 
-          {/* Search Box */}
-          <div className="relative" style={{ marginTop: 14 }}>
-            <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: '#5C6580', pointerEvents: 'none' }}>
-              🔍
-            </span>
+          {/* Search */}
+          <div style={{ position: 'relative' }}>
+            <span style={{
+              position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+              fontSize: 15, color: '#3D4560', pointerEvents: 'none', zIndex: 1,
+            }}>🔍</span>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="ম্যাচ খুঁজুন (নাম, মোড, ম্যাপ)..."
+              placeholder="ম্যাচ খুঁজুন — নাম, মোড, ম্যাপ..."
               className="search-input"
               style={{
-                width: '100%', padding: '10px 14px 10px 38px', borderRadius: 12,
-                background: 'rgba(17,24,39,0.7)', border: '1px solid rgba(148,163,184,0.16)',
-                color: '#fff', fontSize: 13, fontWeight: 500, outline: 'none', boxSizing: 'border-box',
-                transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                width: '100%', padding: '12px 16px 12px 42px',
+                borderRadius: 14, background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                color: '#fff', fontSize: 13.5, fontWeight: 500,
+                boxSizing: 'border-box', transition: 'all 0.25s ease',
+                fontFamily: "'Inter', sans-serif",
               }}
             />
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div style={{ maxWidth: 672, margin: '0 auto', padding: '18px 20px 32px' }}>
+      {/* ── CONTENT ── */}
+      <div style={{ maxWidth: 680, margin: '0 auto', padding: '20px 16px 40px' }}>
+
         {/* Filter Tabs */}
-        <div className="flex gap-2" style={{ overflowX: 'auto', paddingBottom: 4, marginBottom: 6, WebkitOverflowScrolling: 'touch' }}>
-          {FILTERS.map(f => (
-            <button
-              key={f.key}
-              onClick={() => setActiveFilter(f.key)}
-              className="filter-tab flex-shrink-0 flex items-center gap-1.5 rounded-full font-semibold uppercase"
-              style={{
-                padding: '8px 15px', fontSize: 11.5, letterSpacing: '0.04em',
-                background: activeFilter === f.key ? 'rgba(245,166,35,0.12)' : 'rgba(17,24,39,0.6)',
-                border: `1px solid ${activeFilter === f.key ? 'rgba(245,166,35,0.4)' : 'rgba(148,163,184,0.14)'}`,
-                color: activeFilter === f.key ? '#F5A623' : '#8892A8',
-                cursor: 'pointer',
-              }}
-            >
-              {f.label}
-              {counts[f.key] > 0 && (
-                <span
-                  style={{
-                    marginLeft: 2, padding: '2px 6px', borderRadius: 999, fontSize: 10, fontWeight: 700,
-                    background: activeFilter === f.key ? 'rgba(245,166,35,0.2)' : 'rgba(148,163,184,0.14)',
-                    color: activeFilter === f.key ? '#F5A623' : '#8892A8',
-                  }}
-                >
-                  {counts[f.key]}
-                </span>
-              )}
-            </button>
-          ))}
+        <div style={{
+          display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4,
+          marginBottom: 20, WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none', msOverflowStyle: 'none',
+        }}>
+          {FILTERS.map(f => {
+            const isActive = activeFilter === f.key
+            const tabColors = {
+              all:      { active: '#F5A623', glow: 'rgba(245,166,35,0.2)' },
+              live:     { active: '#FF5C5C', glow: 'rgba(255,92,92,0.2)' },
+              upcoming: { active: '#F5A623', glow: 'rgba(245,166,35,0.2)' },
+              completed:{ active: '#3DDC84', glow: 'rgba(61,220,132,0.2)' },
+              expired:  { active: '#8892A8', glow: 'rgba(136,146,168,0.2)' },
+            }
+            const tc = tabColors[f.key] || tabColors.all
+            return (
+              <button
+                key={f.key}
+                onClick={() => setActiveFilter(f.key)}
+                className="filter-tab"
+                style={{
+                  flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '9px 16px', borderRadius: 999, fontSize: 12,
+                  fontWeight: 700, letterSpacing: '0.05em',
+                  fontFamily: "'Rajdhani', sans-serif",
+                  background: isActive ? tc.glow : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${isActive ? tc.active : 'rgba(255,255,255,0.07)'}`,
+                  color: isActive ? tc.active : '#4A5270',
+                  cursor: 'pointer',
+                  boxShadow: isActive ? `0 4px 20px ${tc.glow}` : 'none',
+                }}
+              >
+                {f.label}
+                {counts[f.key] > 0 && (
+                  <span style={{
+                    padding: '1px 7px', borderRadius: 999, fontSize: 10, fontWeight: 800,
+                    background: isActive ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.06)',
+                    color: isActive ? tc.active : '#4A5270',
+                    border: `1px solid ${isActive ? 'rgba(255,255,255,0.12)' : 'transparent'}`,
+                  }}>
+                    {counts[f.key]}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
 
         {/* Loading Skeleton */}
         {loading && (
-          <div style={{ marginTop: 16 }}>
+          <div style={{ marginTop: 8 }}>
             {[1, 2, 3].map(i => (
-              <div
-                key={i}
-                style={{
-                  borderRadius: 16, overflow: 'hidden', marginBottom: 14, display: 'flex', flexDirection: 'row',
-                  background: 'rgba(22,27,46,0.5)', border: '1px solid rgba(148,163,184,0.12)',
-                }}
-              >
-                <div style={{ width: 140, height: 100, flexShrink: 0, margin: 8, borderRadius: 12, background: '#1E2540' }} />
-                <div style={{ flex: 1, padding: '10px 12px 10px 0', display: 'flex', flexDirection: 'column', gap: 7 }}>
-                  <div style={{ height: 14, background: '#1E2540', borderRadius: 4, width: '75%' }} />
-                  <div className="grid grid-cols-2 gap-3">
-                    <div style={{ height: 10, background: '#1E2540', borderRadius: 4 }} />
-                    <div style={{ height: 10, background: '#1E2540', borderRadius: 4 }} />
-                    <div style={{ height: 10, background: '#1E2540', borderRadius: 4 }} />
-                    <div style={{ height: 10, background: '#1E2540', borderRadius: 4 }} />
+              <div key={i} style={{
+                borderRadius: 20, overflow: 'hidden', marginBottom: 16,
+                display: 'flex', flexDirection: 'row',
+                background: 'rgba(19,25,41,0.8)', border: '1px solid rgba(255,255,255,0.06)',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+              }}>
+                <div className="shimmer-skeleton" style={{ width: 130, height: 120, flexShrink: 0, margin: 12, borderRadius: 14 }} />
+                <div style={{ flex: 1, padding: '14px 14px 14px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div className="shimmer-skeleton" style={{ height: 15, borderRadius: 6, width: '70%' }} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    {[1,2,3,4].map(j => <div key={j} className="shimmer-skeleton" style={{ height: 11, borderRadius: 4 }} />)}
                   </div>
-                  <div style={{ height: 30, background: '#1E2540', borderRadius: 10, marginTop: 'auto' }} />
+                  <div className="shimmer-skeleton" style={{ height: 34, borderRadius: 12, marginTop: 'auto' }} />
                 </div>
               </div>
             ))}
@@ -924,13 +1023,19 @@ export default function Matches() {
 
         {/* Empty State */}
         {!loading && filtered.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '64px 0' }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🎮</div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: '#fff', margin: '0 0 8px' }}>কোনো ম্যাচ নেই</h3>
-            <p style={{ fontSize: 14, color: '#8892A8', maxWidth: 280, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', padding: '80px 24px', animation: 'fadeIn 0.4s ease' }}>
+            <div style={{
+              width: 80, height: 80, borderRadius: 24, margin: '0 auto 20px',
+              background: 'rgba(245,166,35,0.08)', border: '1px solid rgba(245,166,35,0.15)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36,
+            }}>🎮</div>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: '#fff', margin: '0 0 10px', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.02em' }}>
+              কোনো ম্যাচ নেই
+            </h3>
+            <p style={{ fontSize: 13.5, color: '#4A5270', maxWidth: 260, margin: '0 auto', lineHeight: 1.6, fontFamily: "'Inter', sans-serif" }}>
               {searchQuery
-                ? 'আপনার সার্চের সাথে মিলে এমন কোনো ম্যাচ পাওয়া যায়নি।'
-                : 'এই ক্যাটাগরিতে কোনো ম্যাচ পাওয়া যায়নি। Home থেকে একটি টুর্নামেন্টে জয়েন করুন!'}
+                ? 'সার্চের সাথে মিলে এমন কোনো ম্যাচ পাওয়া যায়নি।'
+                : 'Home থেকে একটি টুর্নামেন্টে জয়েন করুন!'}
             </p>
           </div>
         )}
@@ -938,7 +1043,6 @@ export default function Matches() {
         {/* Match Cards */}
         {!loading && filtered.map((match, index) => (
           <div key={match.id}>
-            {/* Section headers for "all" view */}
             {activeFilter === 'all' && (
               (index === 0 || match.computedStatus !== filtered[index - 1]?.computedStatus) && (
                 <SectionHeader
