@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useNotifications } from '../hooks/useNotifications'
 
@@ -27,9 +28,58 @@ export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead } = useNotifications()
   const [open, setOpen] = useState(false)
   const [ring, setRing] = useState(false)
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 })
   const prevCount = useRef(unreadCount)
   const wrapRef = useRef(null)
+  const btnRef = useRef(null)
+  const dropdownRef = useRef(null)
+  const seenIds = useRef(null) // null until the first snapshot has been processed
   const navigate = useNavigate()
+
+  // Ask for OS-notification permission once, so background-tab notifications
+  // (below) can actually show. Only prompts if the user hasn't already
+  // answered — browsers remember 'granted'/'denied' after the first prompt.
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }, [])
+
+  // OS-level notification when the tab is in the background (minimized or
+  // another tab focused) and a genuinely NEW notification doc arrives.
+  // Doesn't fire for the batch of notifications already sitting there when
+  // the app first loads — only for ones that show up after that.
+  useEffect(() => {
+    if (!('Notification' in window)) return
+    const currentIds = new Set(notifications.map((n) => n.id))
+
+    if (seenIds.current === null) {
+      seenIds.current = currentIds
+      return
+    }
+
+    const freshOnes = notifications.filter((n) => !seenIds.current.has(n.id))
+    seenIds.current = currentIds
+    if (!freshOnes.length) return
+    if (Notification.permission !== 'granted') return
+    if (!document.hidden) return // tab is actually visible/focused — the in-app bell already covers this
+
+    try {
+      if (freshOnes.length === 1) {
+        const n = freshOnes[0]
+        const osNotif = new Notification(n.title || 'Notification', { body: n.body || '', tag: n.id })
+        osNotif.onclick = () => { window.focus(); navigate('/notifications'); osNotif.close() }
+      } else {
+        const osNotif = new Notification(`${freshOnes.length}টি নতুন Notification`, {
+          body: freshOnes.map((n) => n.title).slice(0, 3).join(' • '),
+          tag: 'nbell-batch',
+        })
+        osNotif.onclick = () => { window.focus(); navigate('/notifications'); osNotif.close() }
+      }
+    } catch (err) {
+      console.warn('OS notification failed (non-blocking):', err)
+    }
+  }, [notifications, navigate])
 
   // Play the bell-ring animation whenever unread count goes UP (a genuinely
   // new notification arrived) — not on every render, and not when it goes
@@ -43,13 +93,38 @@ export default function NotificationBell() {
     prevCount.current = unreadCount
   }, [unreadCount])
 
+  // Outside-click needs to check both the bell button AND the portaled
+  // dropdown (they're no longer in the same DOM subtree once the dropdown
+  // is rendered into document.body via createPortal).
   useEffect(() => {
     function onOutside(e) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false)
+      if (
+        wrapRef.current && !wrapRef.current.contains(e.target) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target)
+      ) {
+        setOpen(false)
+      }
     }
     document.addEventListener('mousedown', onOutside)
     return () => document.removeEventListener('mousedown', onOutside)
   }, [])
+
+  // .topbar has `overflow:hidden` for its glass-card visual effect, which
+  // was silently clipping this dropdown to invisible since it's taller
+  // than the topbar itself. Rendering it into document.body via a portal
+  // (below) escapes that clipping — but it also means the dropdown is no
+  // longer positioned relative to the bell via CSS, so we compute its
+  // fixed viewport position here whenever it opens.
+  function toggleOpen() {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      setDropdownPos({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      })
+    }
+    setOpen((o) => !o)
+  }
 
   function handleItemClick(n) {
     if (!n.read) markAsRead(n.id)
@@ -99,7 +174,7 @@ export default function NotificationBell() {
           50% { box-shadow: 0 0 0 2px var(--bg,#0b0e14), 0 0 0 5px rgba(244,63,94,0); }
         }
         .nbell-dropdown {
-          position: absolute; top: 48px; right: 0;
+          position: fixed;
           width: min(340px, 88vw);
           max-height: 420px;
           overflow-y: auto;
@@ -108,7 +183,7 @@ export default function NotificationBell() {
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 16px;
           box-shadow: 0 20px 45px -10px rgba(0,0,0,0.55);
-          z-index: 500;
+          z-index: 9999;
           padding: 6px;
           animation: nbell-drop .18s ease;
         }
@@ -147,13 +222,13 @@ export default function NotificationBell() {
         .nbell-footer a { color: #60a5fa; font-size: 12px; text-decoration: none; cursor: pointer; }
       `}</style>
 
-      <div className={'nbell-btn' + (ring ? ' ring' : '')} onClick={() => setOpen((o) => !o)}>
+      <div ref={btnRef} className={'nbell-btn' + (ring ? ' ring' : '')} onClick={toggleOpen}>
         🔔
         {unreadCount > 0 && <span className="nbell-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>}
       </div>
 
-      {open && (
-        <div className="nbell-dropdown">
+      {open && createPortal(
+        <div ref={dropdownRef} className="nbell-dropdown" style={{ top: dropdownPos.top, right: dropdownPos.right }}>
           <div className="nbell-head">
             <h4>Notifications</h4>
             {unreadCount > 0 && (
@@ -180,7 +255,8 @@ export default function NotificationBell() {
           <div className="nbell-footer">
             <a onClick={() => { setOpen(false); navigate('/notifications') }}>সব দেখুন →</a>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

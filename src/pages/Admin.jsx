@@ -7,6 +7,7 @@ import {
   onSnapshot,
   doc,
   getDoc,
+  getDocs,
   addDoc,
   updateDoc,
   runTransaction,
@@ -17,6 +18,10 @@ import { useAuth, MAIN_ADMIN_UID } from '../context/AuthContext'
 import { CATEGORIES } from '../constants/categories'
 import { recordMatchResult } from '../leaderboardStats'
 import { logTransaction } from '../utils/transactions'
+// ASSUMPTION (verify this path): inferred from notify.js and transactions.js
+// both importing '../firebase' at the same relative depth, i.e. both living
+// in src/utils/. If your notify.js is elsewhere, just fix this one line.
+import { createNotification, createNotificationsBatch } from '../utils/notify'
 import { useToast } from '../components/ToastContext'
 import { useConfirm } from '../components/ConfirmContext'
 
@@ -125,6 +130,19 @@ export default function Admin() {
         console.warn('transaction log failed (non-blocking):', logErr)
       }
 
+      try {
+        await createNotification(r.userId, {
+          type: 'refund',
+          title: r.type === 'add' ? 'Add Money সফল হয়েছে' : 'Withdraw সফল হয়েছে',
+          body: r.type === 'add'
+            ? `আপনার ৳${r.amount} Deposit Balance-এ যোগ হয়েছে।`
+            : `আপনার ৳${r.amount} Withdraw Approve হয়েছে।`,
+          data: { walletRequestId: r.id },
+        })
+      } catch (notifyErr) {
+        console.warn('notification create failed (non-blocking):', notifyErr)
+      }
+
       showToast('success', 'Approve করা হয়েছে')
     } catch (err) {
       showToast('error', err.message || 'সমস্যা হয়েছে')
@@ -138,6 +156,18 @@ export default function Admin() {
       await runTransaction(db, async (tx) => {
         tx.update(reqRef, { status: 'rejected', rejectedAt: serverTimestamp() })
       })
+
+      try {
+        await createNotification(r.userId, {
+          type: 'refund',
+          title: r.type === 'add' ? 'Add Money Reject হয়েছে' : 'Withdraw Reject হয়েছে',
+          body: `আপনার ৳${r.amount} এর request admin reject করেছে।`,
+          data: { walletRequestId: r.id },
+        })
+      } catch (notifyErr) {
+        console.warn('notification create failed (non-blocking):', notifyErr)
+      }
+
       showToast('success', 'Reject করা হয়েছে')
     } catch (err) {
       showToast('error', 'সমস্যা হয়েছে')
@@ -369,6 +399,19 @@ function ResultsPanel() {
         console.warn('leaderboard stats update failed (non-blocking):', statsErr)
       }
 
+      try {
+        await createNotification(r.userId, {
+          type: 'match_result',
+          title: 'Result Approve হয়েছে',
+          body: isBr
+            ? `${r.title} — Kills: ${finalKills}, Position: ${finalPosition}${finalPrize ? `, Prize ৳${finalPrize}` : ''}`
+            : `${r.title} — Kills: ${finalKills}, ${isWinner ? 'আপনি জিতেছেন 🏆' : 'আপনি হেরেছেন'}${finalPrize ? `, Prize ৳${finalPrize}` : ''}`,
+          data: { resultId: r.id, tournamentId: r.tournamentId },
+        })
+      } catch (notifyErr) {
+        console.warn('notification create failed (non-blocking):', notifyErr)
+      }
+
       showToast('success', 'Result Approve করা হয়েছে')
     } catch (err) {
       showToast('error', 'সমস্যা হয়েছে: ' + err.message)
@@ -381,6 +424,18 @@ function ResultsPanel() {
       await runTransaction(db, async (tx) => {
         tx.update(doc(db, 'matchResults', r.id), { status: 'rejected', reviewedAt: serverTimestamp() })
       })
+
+      try {
+        await createNotification(r.userId, {
+          type: 'match_result',
+          title: 'Result Reject হয়েছে',
+          body: `${r.title} — আপনার submitted result admin reject করেছে।`,
+          data: { resultId: r.id, tournamentId: r.tournamentId },
+        })
+      } catch (notifyErr) {
+        console.warn('notification create failed (non-blocking):', notifyErr)
+      }
+
       showToast('success', 'Reject করা হয়েছে')
     } catch (err) {
       showToast('error', 'সমস্যা হয়েছে')
@@ -588,6 +643,17 @@ function UsersPanel({ isMainAdmin }) {
         })
       } catch (logErr) {
         console.warn('transaction log failed (non-blocking):', logErr)
+      }
+
+      try {
+        await createNotification(u.id, {
+          type: 'refund',
+          title: 'Refund পেয়েছেন',
+          body: `Admin আপনাকে ৳${amount} refund করেছে।${refundNote.trim() ? ` কারণ: ${refundNote.trim()}` : ''}`,
+          data: {},
+        })
+      } catch (notifyErr) {
+        console.warn('notification create failed (non-blocking):', notifyErr)
       }
 
       showToast('success', `৳${amount} Refund সফল হয়েছে`)
@@ -804,6 +870,19 @@ function TournamentsPanel() {
   function setRoomDraft(t, patch) {
     setRoomDrafts((prev) => ({ ...prev, [t.id]: { ...roomDraftFor(t), ...patch } }))
   }
+  // Active players = entries with status 'joined' — the only pre-result
+  // status entries ever get (see useJoinMatch.js). A 'completed' entry
+  // means the result's already been decided, so it's excluded here.
+  async function getActiveEntryUserIds(tournamentId) {
+    const q = query(
+      collection(db, 'entries'),
+      where('tournamentId', '==', tournamentId),
+      where('status', '==', 'joined')
+    )
+    const snap = await getDocs(q)
+    return snap.docs.map((d) => d.data().userId).filter(Boolean)
+  }
+
   async function saveRoomInfo(t) {
     const d = roomDraftFor(t)
     try {
@@ -811,6 +890,19 @@ function TournamentsPanel() {
         roomId: d.roomId,
         roomPassword: d.roomPassword,
       })
+
+      try {
+        const userIds = await getActiveEntryUserIds(t.id)
+        await createNotificationsBatch(userIds, {
+          type: 'room_ready',
+          title: 'Room ID Ready!',
+          body: `${t.title} — Room ID ও Password পাঠানো হয়েছে। ম্যাচে যাওয়ার আগে চেক করুন।`,
+          data: { tournamentId: t.id },
+        })
+      } catch (notifyErr) {
+        console.warn('room_ready notification batch failed (non-blocking):', notifyErr)
+      }
+
       showToast('success', 'Room ID / Password সেভ হয়েছে')
     } catch (err) {
       showToast('error', 'সেভ করা যায়নি')
@@ -818,10 +910,26 @@ function TournamentsPanel() {
   }
 
   async function toggleStatus(t) {
+    const closing = t.status === 'open'
     try {
       await updateDoc(doc(db, 'tournaments', t.id), {
-        status: t.status === 'open' ? 'closed' : 'open',
+        status: closing ? 'closed' : 'open',
       })
+
+      if (closing) {
+        try {
+          const userIds = await getActiveEntryUserIds(t.id)
+          await createNotificationsBatch(userIds, {
+            type: 'match_cancelled',
+            title: 'Match Cancelled',
+            body: `${t.title} — এই ম্যাচটি admin কর্তৃক বন্ধ করা হয়েছে।`,
+            data: { tournamentId: t.id },
+          })
+        } catch (notifyErr) {
+          console.warn('match_cancelled notification batch failed (non-blocking):', notifyErr)
+        }
+      }
+
       showToast('success', 'আপডেট হয়েছে')
     } catch (err) {
       showToast('error', 'আপডেট করা যায়নি')
