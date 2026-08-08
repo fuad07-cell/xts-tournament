@@ -175,13 +175,23 @@ export default {
   profileUpdated: 'প্রোফাইল আপডেট হয়েছে',
   saveFailed: 'সেভ করা যায়নি',
 
-  // ── Invite Modal ──
+  // ── Invite Friends Page ──
   inviteFriendsTitle: 'বন্ধুদের ইনভাইট করুন',
   inviteDesc: 'প্রতিটা invite এ ৳৫ আয় করুন (প্রথম বুকিং সম্পন্ন হলে)',
   yourReferralCode: 'আপনার রেফারেল কোড',
   copied: 'কপি হয়েছে ✓',
   copyCode: 'কোড কপি করুন',
-  inviteNote: 'এই মুহূর্তে কোড শেয়ার করা যায়, কিন্তু automatic reward crediting এখনো backend এ যুক্ত করা হয়নি।',
+  copyLink: 'লিংক কপি করুন',
+  share: 'শেয়ার করুন',
+  invited: 'ইনভাইট করেছেন',
+  earned: 'আয় করেছেন',
+  referralHistory: 'রেফারেল ইতিহাস',
+  referralHistoryEmpty: 'এখনো কেউ আপনার কোড দিয়ে জয়েন করেননি — কোডটি শেয়ার করুন!',
+  referralHistoryLoading: 'লোড হচ্ছে...',
+  referralBonusEarned: '৳৫ পেয়েছেন',
+  referralBonusPending: 'প্রথম ম্যাচের অপেক্ষায়',
+  inviteHeroSub: 'আপনার কোড শেয়ার করুন — বন্ধু প্রথম ম্যাচ জয়েন করলেই দুইজনেই ৳৫ পাবেন!',
+  inviteShareText: 'আমার রেফারেল কোড দিয়ে জয়েন করুন — দুইজনেই ৳৫ পাবেন! Code: __code__',
 
   // ── Developer Modal ──
   devInfo: 'XTS Tournament ডেভেলপ করা হয়েছে স্বাধীনভাবে।',
@@ -293,7 +303,16 @@ export default {
   txRefund: 'ফেরত',
   txPrize: 'পুরস্কার',
   txCheckin: 'চেক-ইন বোনাস',
+  txReferral: 'Referral Bonus',
   txAdjustment: 'Admin সামঞ্জস্য',
+  filterAll: 'সব',
+  filterDeposit: 'DEPOSIT',
+  filterWithdraw: 'WITHDRAW',
+  filterEntryFee: 'ENTRY FEE',
+  filterRefund: 'REFUND',
+  filterPrize: 'PRIZE',
+  filterCheckin: 'CHECK-IN',
+  filterReferral: 'REFERRAL',
 
   // ── Category Page ──
   categoryNotFound: 'এই ক্যাটাগরি পাওয়া যায়নি',
@@ -373,7 +392,17 @@ export default {
   slotsFullError: 'এই ম্যাচের স্লট পূর্ণ হয়ে গেছে',
   insufficientBalanceError: 'Balance যথেষ্ট নয়। আগে Add Money করুন',
   joinSuccess: 'ম্যাচে Register করা হয়েছে! "আমার ম্যাচ" থেকে দেখুন।',
+  joinSuccessWithReferral: 'ম্যাচে Register করা হয়েছে! রেফারেল বোনাস হিসেবে ৳__amount__ও যোগ হয়েছে।',
   joinFailed: 'Register করা যায়নি, আবার চেষ্টা করুন',
+
+  // ── Referral Bonus (referred user-এর প্রথম booking সম্পন্ন হলে) ──
+  referralBonusTxTitle: 'Referral Bonus',
+  referralBonusSelfSubtitle: 'Referral code ব্যবহার করে প্রথম ম্যাচ জয়েনের বোনাস',
+  referralBonusReferrerSubtitle: '__username__ প্রথম ম্যাচ খেলেছে',
+  referralBonusReferrerSubtitleGeneric: 'আপনার বন্ধু প্রথম ম্যাচ খেলেছে',
+  referralBonusNotifTitle: '৳__amount__ Referral Bonus পেয়েছেন',
+  referralBonusNotifBody: 'আপনার ইনভাইট করা বন্ধু __username__ প্রথম ম্যাচ খেলেছে — ৳__amount__ আপনার ওয়ালেটে যোগ হয়েছে।',
+  referralBonusNotifBodyGeneric: 'আপনার ইনভাইট করা একজন বন্ধু প্রথম ম্যাচ খেলেছে — ৳__amount__ আপনার ওয়ালেটে যোগ হয়েছে।',
 
   // ── Month names (short) ──
   months: ['জানু', 'ফেব', 'মার্চ', 'এপ্রি', 'মে', 'জুন', 'জুলা', 'আগ', 'সেপ', 'অক্টো', 'নভে', 'ডিসে'],

@@ -6,27 +6,27 @@ import { db } from '../firebase'
 // Admin panel and the Transaction History page always agree on labels,
 // icons, colors and in/out direction.
 export const TRANSACTION_TYPES = {
-  deposit: { label: 'Add Money', icon: '🏦', color: 'mint', direction: 'in' },
-  withdraw: { label: 'Withdraw', icon: '💸', color: 'red', direction: 'out' },
-  entry_fee: { label: 'Entry Fee', icon: '🎮', color: 'red', direction: 'out' },
-  refund: { label: 'Refund', icon: '↩️', color: 'mint', direction: 'in' },
-  prize: { label: 'Prize', icon: '🏆', color: 'mint', direction: 'in' },
-  checkin: { label: 'Check-in Bonus', icon: '✨', color: 'mint', direction: 'in' },
-  referral: { label: 'Referral Bonus', icon: '🎁', color: 'mint', direction: 'in' },
-  adjustment: { label: 'Admin Adjustment', icon: '⚙️', color: 'red', direction: 'out' },
+  deposit: { labelKey: 'txDeposit', label: 'Add Money', icon: '🏦', color: 'mint', direction: 'in' },
+  withdraw: { labelKey: 'txWithdraw', label: 'Withdraw', icon: '💸', color: 'red', direction: 'out' },
+  entry_fee: { labelKey: 'txEntryFee', label: 'Entry Fee', icon: '🎮', color: 'red', direction: 'out' },
+  refund: { labelKey: 'txRefund', label: 'Refund', icon: '↩️', color: 'mint', direction: 'in' },
+  prize: { labelKey: 'txPrize', label: 'Prize', icon: '🏆', color: 'mint', direction: 'in' },
+  checkin: { labelKey: 'txCheckin', label: 'Check-in Bonus', icon: '✨', color: 'mint', direction: 'in' },
+  referral: { labelKey: 'txReferral', label: 'Referral Bonus', icon: '🎁', color: 'mint', direction: 'in' },
+  adjustment: { labelKey: 'txAdjustment', label: 'Admin Adjustment', icon: '⚙️', color: 'red', direction: 'out' },
 }
 
 // Filter chips shown on the Transaction History page, in order.
-// key: '' means "ALL".
+// key: '' means "ALL". labelKey is looked up via useLanguage()'s t().
 export const HISTORY_FILTERS = [
-  { key: '', label: 'ALL' },
-  { key: 'deposit', label: 'DEPOSIT' },
-  { key: 'withdraw', label: 'WITHDRAW' },
-  { key: 'entry_fee', label: 'ENTRY FEE' },
-  { key: 'refund', label: 'REFUND' },
-  { key: 'prize', label: 'PRIZE' },
-  { key: 'checkin', label: 'CHECK-IN' },
-  { key: 'referral', label: 'REFERRAL' },
+  { key: '', labelKey: 'filterAll' },
+  { key: 'deposit', labelKey: 'filterDeposit' },
+  { key: 'withdraw', labelKey: 'filterWithdraw' },
+  { key: 'entry_fee', labelKey: 'filterEntryFee' },
+  { key: 'refund', labelKey: 'filterRefund' },
+  { key: 'prize', labelKey: 'filterPrize' },
+  { key: 'checkin', labelKey: 'filterCheckin' },
+  { key: 'referral', labelKey: 'filterReferral' },
 ]
 
 /**

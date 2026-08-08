@@ -175,13 +175,23 @@ export default {
   profileUpdated: 'Profile updated',
   saveFailed: 'Failed to save',
 
-  // ── Invite Modal ──
+  // ── Invite Friends Page ──
   inviteFriendsTitle: 'Invite Friends',
   inviteDesc: 'Earn ৳5 per invite (after first booking is completed)',
   yourReferralCode: 'Your Referral Code',
   copied: 'Copied ✓',
   copyCode: 'Copy Code',
-  inviteNote: 'Code can be shared now, but automatic reward crediting is not yet added to the backend.',
+  copyLink: 'Copy Link',
+  share: 'Share',
+  invited: 'Invited',
+  earned: 'Earned',
+  referralHistory: 'Referral History',
+  referralHistoryEmpty: 'No one has joined with your code yet — share it!',
+  referralHistoryLoading: 'Loading...',
+  referralBonusEarned: 'Earned ৳5',
+  referralBonusPending: 'Pending first match',
+  inviteHeroSub: 'Share your code — both of you get ৳5 once your friend joins their first match!',
+  inviteShareText: 'Join using my referral code — we both get ৳5! Code: __code__',
 
   // ── Developer Modal ──
   devInfo: 'XTS Tournament is independently developed.',
@@ -293,7 +303,16 @@ export default {
   txRefund: 'Refund',
   txPrize: 'Prize',
   txCheckin: 'Check-in Bonus',
+  txReferral: 'Referral Bonus',
   txAdjustment: 'Admin Adjustment',
+  filterAll: 'ALL',
+  filterDeposit: 'DEPOSIT',
+  filterWithdraw: 'WITHDRAW',
+  filterEntryFee: 'ENTRY FEE',
+  filterRefund: 'REFUND',
+  filterPrize: 'PRIZE',
+  filterCheckin: 'CHECK-IN',
+  filterReferral: 'REFERRAL',
 
   // ── Category Page ──
   categoryNotFound: 'Category not found',
@@ -373,7 +392,17 @@ export default {
   slotsFullError: 'All slots for this match are full',
   insufficientBalanceError: 'Insufficient balance. Please add money first',
   joinSuccess: 'Successfully registered! Check "My Matches" to view.',
+  joinSuccessWithReferral: 'Successfully registered! A ৳__amount__ referral bonus was also added.',
   joinFailed: 'Registration failed, please try again',
+
+  // ── Referral Bonus (fires on the referred user's first booking) ──
+  referralBonusTxTitle: 'Referral Bonus',
+  referralBonusSelfSubtitle: 'Bonus for joining your first match with a referral code',
+  referralBonusReferrerSubtitle: '__username__ played their first match',
+  referralBonusReferrerSubtitleGeneric: 'Your invited friend played their first match',
+  referralBonusNotifTitle: '৳__amount__ Referral Bonus received',
+  referralBonusNotifBody: 'Your invited friend __username__ played their first match — ৳__amount__ was added to your wallet.',
+  referralBonusNotifBodyGeneric: 'A friend you invited played their first match — ৳__amount__ was added to your wallet.',
 
   // ── Month names (short) ──
   months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],

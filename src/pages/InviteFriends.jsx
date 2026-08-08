@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 
 const REFERRAL_BONUS_AMOUNT = 5
 
@@ -15,6 +16,7 @@ const REFERRAL_BONUS_AMOUNT = 5
 export default function InviteFriends() {
   const navigate = useNavigate()
   const { user, profile } = useAuth()
+  const { t, dateLocale } = useLanguage()
   const [referred, setReferred] = useState([])
   const [loading, setLoading] = useState(true)
   const [copiedCode, setCopiedCode] = useState(false)
@@ -63,7 +65,7 @@ export default function InviteFriends() {
   async function shareCode() {
     const shareData = {
       title: 'XTS TOUR BD',
-      text: `আমার রেফারেল কোড দিয়ে জয়েন করুন — দুইজনেই ৳${REFERRAL_BONUS_AMOUNT} করে পাবেন! Code: ${referralCode}`,
+      text: t('inviteShareText').replace('__code__', referralCode),
       url: referralLink,
     }
     if (navigator.share) {
@@ -76,7 +78,7 @@ export default function InviteFriends() {
   function formatDate(ts) {
     const ms = ts?.toMillis?.()
     if (!ms) return ''
-    return new Date(ms).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: 'numeric' })
+    return new Date(ms).toLocaleDateString(dateLocale || 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
   return (
@@ -168,26 +170,24 @@ export default function InviteFriends() {
 
       <div className="invite-page-header">
         <button className="invite-back-btn" onClick={() => navigate(-1)} aria-label="Back">←</button>
-        <span className="invite-page-title">Invite Friends</span>
+        <span className="invite-page-title">{t('inviteFriendsTitle')}</span>
       </div>
 
       <div className="invite-hero">
-        <div className="invite-hero-label"><span aria-hidden="true">🎁</span> Your Referral Code</div>
+        <div className="invite-hero-label"><span aria-hidden="true">🎁</span> {t('yourReferralCode')}</div>
         <div className="invite-code-row">
           <span className="invite-code">{referralCode}</span>
-          <button className="invite-code-copy" onClick={copyCode} aria-label="Copy code">
+          <button className="invite-code-copy" onClick={copyCode} aria-label={t('copyCode')}>
             {copiedCode ? '✓' : '⧉'}
           </button>
         </div>
-        <div className="invite-hero-sub">
-          Share your code — both of you get ৳{REFERRAL_BONUS_AMOUNT} once your friend joins their first match!
-        </div>
+        <div className="invite-hero-sub">{t('inviteHeroSub')}</div>
         <div className="invite-hero-actions">
           <button className="invite-copy-link-btn" onClick={copyLink}>
-            ⧉ {copiedLink ? 'Copied!' : 'Copy Link'}
+            ⧉ {copiedLink ? t('copied') : t('copyLink')}
           </button>
           <button className="invite-share-btn" onClick={shareCode}>
-            ⤴ Share
+            ⤴ {t('share')}
           </button>
         </div>
       </div>
@@ -195,32 +195,32 @@ export default function InviteFriends() {
       <div className="invite-stats-row">
         <div className="invite-stat-card">
           <div className="invite-stat-icon invited">👥</div>
-          <div className="invite-stat-label">Invited</div>
+          <div className="invite-stat-label">{t('invited')}</div>
           <div className="invite-stat-value">{invitedCount}</div>
         </div>
         <div className="invite-stat-card">
           <div className="invite-stat-icon earned">💰</div>
-          <div className="invite-stat-label">Earned</div>
+          <div className="invite-stat-label">{t('earned')}</div>
           <div className="invite-stat-value">৳{earnedAmount}</div>
         </div>
       </div>
 
-      <div className="invite-history-title">Referral History</div>
+      <div className="invite-history-title">{t('referralHistory')}</div>
       {loading ? (
-        <div className="invite-empty">লোড হচ্ছে...</div>
+        <div className="invite-empty">{t('referralHistoryLoading')}</div>
       ) : referred.length === 0 ? (
-        <div className="invite-empty">এখনো কেউ আপনার কোড দিয়ে জয়েন করেননি — কোডটি শেয়ার করুন!</div>
+        <div className="invite-empty">{t('referralHistoryEmpty')}</div>
       ) : (
         <div className="invite-history-list">
           {referred.map((r) => (
             <div className="invite-history-row" key={r.id}>
               <div className="invite-history-avatar">{(r.username || '?').slice(0, 1).toUpperCase()}</div>
               <div>
-                <div className="invite-history-name">{r.username || 'Unknown'}</div>
+                <div className="invite-history-name">{r.username || t('unknown') || 'Unknown'}</div>
                 <div className="invite-history-date">{formatDate(r.createdAt)}</div>
               </div>
               <span className={'invite-history-status ' + (r.referralBonusPaid ? 'earned' : 'pending')}>
-                {r.referralBonusPaid ? `Earned ৳${REFERRAL_BONUS_AMOUNT}` : 'Pending first match'}
+                {r.referralBonusPaid ? t('referralBonusEarned') : t('referralBonusPending')}
               </span>
             </div>
           ))}

@@ -2,6 +2,7 @@ import { doc, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/ToastContext'
+import { useLanguage } from '../context/LanguageContext'
 import { logTransaction } from '../utils/transactions'
 import { createNotification } from '../utils/notify'
 
@@ -17,19 +18,20 @@ const REFERRAL_BONUS_AMOUNT = 5
 // wallet and create an entry. Handles the deposit/winning balance split,
 // enforces one-slot-per-account via a deterministic entry ID, and — on a
 // user's very first successful booking — automatically credits whoever
-// referred them.
+// referred them (and the user themselves).
 export function useJoinMatch() {
   const { user, refreshProfile } = useAuth()
   const { showToast } = useToast()
+  const { t } = useLanguage()
 
-  async function joinMatch(t, { mode, ign, teammateIgn, totalCost }) {
+  async function joinMatch(tournament, { mode, ign, teammateIgn, totalCost }) {
     if (!user) return { ok: false, needsAuth: true }
 
     const userRef = doc(db, 'users', user.uid)
-    const tRef = doc(db, 'tournaments', t.id)
+    const tRef = doc(db, 'tournaments', tournament.id)
     // Deterministic ID (tournamentId_userId) instead of an auto-generated one:
     // guarantees one Firebase account can hold at most one entry per tournament.
-    const entryRef = doc(db, 'entries', `${t.id}_${user.uid}`)
+    const entryRef = doc(db, 'entries', `${tournament.id}_${user.uid}`)
 
     // Set only when this booking actually triggers a referral payout, so the
     // (best-effort) transaction-log + notification can run after the
@@ -45,7 +47,7 @@ export function useJoinMatch() {
         ])
 
         if (entrySnap.exists()) {
-          throw new Error('আপনি ইতিমধ্যে এই ম্যাচে জয়েন করেছেন — একই আইডি থেকে একটি ম্যাচে একবারই স্লট কেনা যায়')
+          throw new Error(t('alreadyJoinedError'))
         }
 
         const userData = userSnap.data()
@@ -55,8 +57,8 @@ export function useJoinMatch() {
         const filled = tSnap.data().filled || 0
         const slots = tSnap.data().slots || 0
 
-        if (filled >= slots) throw new Error('এই ম্যাচের স্লট পূর্ণ হয়ে গেছে')
-        if (totalBalance < totalCost) throw new Error('Balance যথেষ্ট নয়। আগে Add Money করুন')
+        if (filled >= slots) throw new Error(t('slotsFullError'))
+        if (totalBalance < totalCost) throw new Error(t('insufficientBalanceError'))
 
         // Winning balance আগে কাটো, তারপর deposit থেকে
         let remainingFee = totalCost
@@ -105,10 +107,10 @@ export function useJoinMatch() {
 
         tx.set(entryRef, {
           userId: user.uid,
-          tournamentId: t.id,
-          title: t.title,
-          category: t.category,
-          entryFee: t.entryFee,
+          tournamentId: tournament.id,
+          title: tournament.title,
+          category: tournament.category,
+          entryFee: tournament.entryFee,
           amountPaid: totalCost,
           mode,
           ign,
@@ -116,11 +118,11 @@ export function useJoinMatch() {
           status: 'joined',
           joinedAt: serverTimestamp(),
           // Matches.jsx এর determineStatus() এর জন্য দরকার
-          date: t.date || null,
-          time: t.time || null,
-          map: t.map || null,
-          prizePool: t.prizePool || 0,
-          submissionDeadline: t.submissionDeadline || '01:00',
+          date: tournament.date || null,
+          time: tournament.time || null,
+          map: tournament.map || null,
+          prizePool: tournament.prizePool || 0,
+          submissionDeadline: tournament.submissionDeadline || '01:00',
         })
 
         if (referrerRef && referrerSnap && referrerSnap.exists()) {
@@ -141,8 +143,8 @@ export function useJoinMatch() {
       showToast(
         'success',
         referralPayout
-          ? `ম্যাচে Register করা হয়েছে! রেফারেল বোনাস হিসেবে ৳${REFERRAL_BONUS_AMOUNT}ও যোগ হয়েছে।`
-          : 'ম্যাচে Register করা হয়েছে! "My Matches" থেকে দেখুন।'
+          ? t('joinSuccessWithReferral').replace('__amount__', REFERRAL_BONUS_AMOUNT)
+          : t('joinSuccess')
       )
 
       // Best-effort — a referral payout already committed above; logging
@@ -153,8 +155,8 @@ export function useJoinMatch() {
           await logTransaction(referralPayout.referredUid, {
             type: 'referral',
             amount: REFERRAL_BONUS_AMOUNT,
-            title: 'Referral Bonus',
-            subtitle: 'Referral code ব্যবহার করে প্রথম ম্যাচ জয়েনের বোনাস',
+            title: t('referralBonusTxTitle'),
+            subtitle: t('referralBonusSelfSubtitle'),
           })
         } catch (logErr) {
           console.warn('referral (self) transaction log failed (non-blocking):', logErr)
@@ -163,10 +165,10 @@ export function useJoinMatch() {
           await logTransaction(referralPayout.referrerUid, {
             type: 'referral',
             amount: REFERRAL_BONUS_AMOUNT,
-            title: 'Referral Bonus',
+            title: t('referralBonusTxTitle'),
             subtitle: referralPayout.referredUsername
-              ? `${referralPayout.referredUsername} প্রথম ম্যাচ খেলেছে`
-              : 'আপনার বন্ধু প্রথম ম্যাচ খেলেছে',
+              ? t('referralBonusReferrerSubtitle').replace('__username__', referralPayout.referredUsername)
+              : t('referralBonusReferrerSubtitleGeneric'),
           })
         } catch (logErr) {
           console.warn('referral transaction log failed (non-blocking):', logErr)
@@ -174,10 +176,10 @@ export function useJoinMatch() {
         try {
           await createNotification(referralPayout.referrerUid, {
             type: 'refund',
-            title: `৳${REFERRAL_BONUS_AMOUNT} Referral Bonus পেয়েছেন`,
+            title: t('referralBonusNotifTitle').replace('__amount__', REFERRAL_BONUS_AMOUNT),
             body: referralPayout.referredUsername
-              ? `আপনার ইনভাইট করা বন্ধু ${referralPayout.referredUsername} প্রথম ম্যাচ খেলেছে — ৳${REFERRAL_BONUS_AMOUNT} আপনার ওয়ালেটে যোগ হয়েছে।`
-              : `আপনার ইনভাইট করা একজন বন্ধু প্রথম ম্যাচ খেলেছে — ৳${REFERRAL_BONUS_AMOUNT} আপনার ওয়ালেটে যোগ হয়েছে।`,
+              ? t('referralBonusNotifBody').replace('__username__', referralPayout.referredUsername).replace('__amount__', REFERRAL_BONUS_AMOUNT)
+              : t('referralBonusNotifBodyGeneric').replace('__amount__', REFERRAL_BONUS_AMOUNT),
           })
         } catch (notifyErr) {
           console.warn('referral notification failed (non-blocking):', notifyErr)
@@ -186,7 +188,7 @@ export function useJoinMatch() {
 
       return { ok: true }
     } catch (err) {
-      showToast('error', err.message || 'Register করা যায়নি, আবার চেষ্টা করুন')
+      showToast('error', err.message || t('joinFailed'))
       return { ok: false }
     }
   }

@@ -5,6 +5,7 @@ import { updateProfile as updateAuthProfile } from 'firebase/auth'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/ToastContext'
+import { useLanguage } from '../context/LanguageContext'
 
 const DIAL_CODES = { bKash: '*247#', Nagad: '*167#', Rocket: '*322#' }
 
@@ -222,6 +223,7 @@ export default function Profile() {
   const [modal, setModal] = useState(null)
   const [theme, setTheme] = useState(() => localStorage.getItem('xts-theme') || 'dark')
   const [emailCopied, setEmailCopied] = useState(false)
+  const { t } = useLanguage()
 
   // Wallet card premium interaction: cursor-reactive spotlight + 3D tilt.
   // Writes CSS custom properties directly via ref (no React re-render on every
@@ -266,12 +268,12 @@ export default function Profile() {
   }
 
   const menuItems = [
-    { key: 'history', icon: '🕓', color: 'blue', title: 'Transaction History', sub: 'View your wallet credits and debits.', action: () => navigate('/transactions') },
-    { key: 'edit', icon: '✎', color: 'purple', title: 'Edit Profile', sub: 'Keep your account accurate and verified.', action: () => setModal('edit') },
-    { key: 'invite', icon: '👥', color: 'green', title: 'Invite Friends', sub: 'Earn ৳5 for each invite.', action: () => navigate('/invite') },
-    { key: 'leaderboard', icon: '🏆', color: 'orange', title: 'Leaderboard', sub: 'Track your progress for each goals.', action: () => navigate('/leaderboard') },
-    { key: 'payment', icon: '💳', color: 'blue', title: 'Payment Settings', sub: 'bKash/Nagad/Rocket receiving number.', action: () => setModal('payment'), adminOnly: true },
-    { key: 'admin', icon: '🛠️', color: 'purple', title: 'Admin Panel', sub: 'Manage wallet, matches & results.', action: () => navigate('/admin'), adminOnly: true },
+    { key: 'history', icon: '🕓', color: 'blue', title: t('transactionHistory'), sub: t('transactionHistorySub'), action: () => navigate('/transactions') },
+    { key: 'edit', icon: '✎', color: 'purple', title: t('editProfile'), sub: t('editProfileSub'), action: () => setModal('edit') },
+    { key: 'invite', icon: '👥', color: 'green', title: t('inviteFriends'), sub: t('inviteFriendsSub'), action: () => navigate('/invite') },
+    { key: 'leaderboard', icon: '🏆', color: 'orange', title: t('leaderboardMenu'), sub: t('leaderboardMenuSub'), action: () => navigate('/leaderboard') },
+    { key: 'payment', icon: '💳', color: 'blue', title: t('paymentSettings'), sub: t('paymentSettingsSub'), action: () => setModal('payment'), adminOnly: true },
+    { key: 'admin', icon: '🛠️', color: 'purple', title: t('adminPanel'), sub: t('adminPanelSub'), action: () => navigate('/admin'), adminOnly: true },
   ]
 
   return (
@@ -284,7 +286,7 @@ export default function Profile() {
             borderRadius: 12, padding: '10px 14px', marginBottom: 14, fontSize: 13, color: '#fbbf24',
           }}
         >
-          ⚠️ আপনার Email এখনো verify করা হয়নি — Withdraw করার আগে ইনবক্স চেক করে verify করে নিন।
+          ⚠️ {t('emailNotVerified')}
         </div>
       )}
 
@@ -302,7 +304,7 @@ export default function Profile() {
           )}
           <div className="avatar-badge">📷</div>
         </div>
-        <div className="profile-name-v2">{profile?.username || 'ব্যবহারকারী'}</div>
+        <div className="profile-name-v2">{profile?.username || t('user')}</div>
         <div className="profile-email-row" onClick={copyEmail}>
           <span>✉️ {user?.email}</span>
           <span className="copy-mini">{emailCopied ? '✓' : '⧉'}</span>
@@ -318,25 +320,25 @@ export default function Profile() {
       >
         <div className="amex-sheen" aria-hidden="true" />
         <div className="amex-top">
-          <span className="amex-label">WALLET</span>
+          <span className="amex-label">{t('wallet')}</span>
           <span className="amex-wifi">📶</span>
         </div>
         <div className="amex-chip">▤</div>
-        <div className="amex-balance-label">TOTAL BALANCE</div>
+        <div className="amex-balance-label">{t('totalBalance')}</div>
         <div className="amex-balance">৳ {profile?.walletBalance ?? 0}</div>
 
         <div className="amex-mini-stats">
           <div className="amex-mini">
             <span className="amex-mini-icon">🏦</span>
             <div>
-              <div className="amex-mini-label">DEPOSIT</div>
+              <div className="amex-mini-label">{t('deposit')}</div>
               <div className="amex-mini-value">৳{profile?.depositBalance ?? 0}</div>
             </div>
           </div>
           <div className="amex-mini">
             <span className="amex-mini-icon">🏅</span>
             <div>
-              <div className="amex-mini-label">WINNING</div>
+              <div className="amex-mini-label">{t('winning')}</div>
               <div className="amex-mini-value">৳{profile?.winningBalance ?? 0}</div>
             </div>
           </div>
@@ -344,8 +346,8 @@ export default function Profile() {
 
         <div className="amex-bottom">
           <div>
-            <div className="amex-holder-label">CARD HOLDER</div>
-            <div className="amex-holder-name">{(profile?.username || 'ব্যবহারকারী').toUpperCase()}</div>
+            <div className="amex-holder-label">{t('cardHolder')}</div>
+            <div className="amex-holder-name">{(profile?.username || t('user')).toUpperCase()}</div>
           </div>
           <span className="amex-chevron">›</span>
         </div>
@@ -355,11 +357,11 @@ export default function Profile() {
       <div className="balance-actions">
         <button className="balance-btn-v2 add" onClick={() => setModal('add')}>
           <span className="balance-btn-icon">+</span>
-          <span>Add Money</span>
+          <span>{t('addMoney')}</span>
         </button>
         <button className="balance-btn-v2 withdraw" onClick={() => setModal('withdraw')}>
           <span className="balance-btn-icon">−</span>
-          <span>Withdraw</span>
+          <span>{t('withdraw')}</span>
         </button>
       </div>
 
@@ -378,8 +380,8 @@ export default function Profile() {
         <div className="menu-item-v2" style={{ cursor: 'default' }}>
           <PremiumIcon variant="theme" />
           <span className="menu-text">
-            <span className="menu-title">Theme</span>
-            <span className="menu-sub">Switch Light/Dark</span>
+            <span className="menu-title">{t('theme')}</span>
+            <span className="menu-sub">{t('themeSub')}</span>
           </span>
           <label className="switch">
             <input type="checkbox" checked={theme === 'light'} onChange={toggleTheme} />
@@ -390,8 +392,8 @@ export default function Profile() {
         <button className="menu-item-v2" onClick={() => setModal('dev')}>
           <PremiumIcon variant="dev" />
           <span className="menu-text">
-            <span className="menu-title">App Developer</span>
-            <span className="menu-sub">View developer info</span>
+            <span className="menu-title">{t('appDeveloper')}</span>
+            <span className="menu-sub">{t('appDeveloperSub')}</span>
           </span>
           <span className="chev">›</span>
         </button>
@@ -399,8 +401,8 @@ export default function Profile() {
         <button className="menu-item-v2" onClick={() => setModal('language')}>
           <PremiumIcon variant="language" />
           <span className="menu-text">
-            <span className="menu-title">Language</span>
-            <span className="menu-sub">English / বাংলা</span>
+            <span className="menu-title">{t('language')}</span>
+            <span className="menu-sub">{t('languageSub')}</span>
           </span>
           <span className="chev">›</span>
         </button>
@@ -408,15 +410,15 @@ export default function Profile() {
         <button className="menu-item-v2 danger" onClick={logout}>
           <PremiumIcon variant="logout" />
           <span className="menu-text">
-            <span className="menu-title">Logout</span>
-            <span className="menu-sub">Sign out of your account.</span>
+            <span className="menu-title">{t('logout')}</span>
+            <span className="menu-sub">{t('logoutSub')}</span>
           </span>
           <span className="chev">›</span>
         </button>
       </div>
 
       <div className="note">
-        নিরাপত্তার জন্য Add Money ও Withdraw এখানে সরাসরি টাকা transfer করে না — এটা একটা request জমা দেয়, যেটা admin manually যাচাই করে balance আপডেট করবে। Withdraw শুধু Winning Balance থেকেই করা যাবে।
+        {t('walletNote')}
       </div>
 
       {modal === 'add' && <RequestModal type="add" onClose={() => setModal(null)} userId={user.uid} />}
@@ -427,10 +429,10 @@ export default function Profile() {
         <div className="overlay overlay-center" onClick={() => setModal(null)}>
           <div className="sheet sheet-compact" onClick={(e) => e.stopPropagation()}>
             <button className="close-btn" onClick={() => setModal(null)}>✕</button>
-            <h2>App Developer</h2>
-            <div className="meta">XTS Tournament ডেভেলপ করা হয়েছে স্বাধীনভাবে।</div>
-            <div className="sheet-row-static"><span>App Version</span><span>1.0.0</span></div>
-            <div className="sheet-row-static"><span>Contact</span><span>crisleo692@gmail.com</span></div>
+            <h2>{t('appDeveloper')}</h2>
+            <div className="meta">{t('devInfo')}</div>
+            <div className="sheet-row-static"><span>{t('appVersion')}</span><span>1.0.0</span></div>
+            <div className="sheet-row-static"><span>{t('contact')}</span><span>crisleo692@gmail.com</span></div>
           </div>
         </div>
       )}
@@ -443,6 +445,7 @@ export default function Profile() {
 
 function EditProfileModal({ onClose, user, profile, refreshProfile }) {
   const { showToast } = useToast()
+  const { t } = useLanguage()
   const [username, setUsername] = useState(profile?.username || '')
   const [phoneNumber, setPhoneNumber] = useState(profile?.phoneNumber || '')
   const [freeFireUID, setFreeFireUID] = useState(profile?.freeFireUID || '')
@@ -466,14 +469,14 @@ function EditProfileModal({ onClose, user, profile, refreshProfile }) {
       if (!data.success) throw new Error()
       setAvatarUrl(data.data.url)
     } catch (err) {
-      showToast('error', 'ছবি আপলোড করা যায়নি, আবার চেষ্টা করুন')
+      showToast('error', t('photoUploadFailed'))
     } finally {
       setUploadingPhoto(false)
     }
   }
 
   async function save() {
-    if (!username.trim()) return showToast('warning', 'নাম খালি রাখা যাবে না')
+    if (!username.trim()) return showToast('warning', t('nameRequired'))
     setBusy(true)
     try {
       await updateDoc(doc(db, 'users', user.uid), {
@@ -484,10 +487,10 @@ function EditProfileModal({ onClose, user, profile, refreshProfile }) {
       })
       await updateAuthProfile(user, { displayName: username.trim(), photoURL: avatarUrl || null })
       await refreshProfile()
-      showToast('success', 'প্রোফাইল আপডেট হয়েছে')
+      showToast('success', t('profileUpdated'))
       onClose()
     } catch (err) {
-      showToast('error', 'সেভ করা যায়নি')
+      showToast('error', t('saveFailed'))
     } finally {
       setBusy(false)
     }
@@ -511,7 +514,7 @@ function EditProfileModal({ onClose, user, profile, refreshProfile }) {
         >
           ←
         </button>
-        <h2 style={{ margin: 0, fontSize: 20, color: '#fff' }}>Edit Profile</h2>
+        <h2 style={{ margin: 0, fontSize: 20, color: '#fff' }}>{t('editProfileTitle')}</h2>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
@@ -547,10 +550,10 @@ function EditProfileModal({ onClose, user, profile, refreshProfile }) {
         </div>
       </div>
 
-      <FieldLabel icon="👤" text="USERNAME" />
-      <DarkInput value={username} onChange={setUsername} placeholder="আপনার নাম" />
+      <FieldLabel icon="👤" text={t('username')} />
+      <DarkInput value={username} onChange={setUsername} placeholder={t('usernamePlaceholder')} />
 
-      <FieldLabel icon="📞" text="PHONE NUMBER" />
+      <FieldLabel icon="📞" text={t('phoneNumber')} />
       <DarkInput
         value={phoneNumber}
         onChange={(v) => setPhoneNumber(v.replace(/\D/g, '').slice(0, 11))}
@@ -558,10 +561,10 @@ function EditProfileModal({ onClose, user, profile, refreshProfile }) {
         maxLength={11}
       />
 
-      <FieldLabel icon="🎮" text="FREE FIRE UID" />
+      <FieldLabel icon="🎮" text={t('freeFireUid')} />
       <DarkInput value={freeFireUID} onChange={setFreeFireUID} placeholder="Your game UID" />
 
-      <FieldLabel text="EMAIL (CANNOT CHANGE)" />
+      <FieldLabel text={t('emailCannotChange')} />
       <DarkInput value={user?.email || ''} readOnly disabled />
 
       <button
@@ -570,7 +573,7 @@ function EditProfileModal({ onClose, user, profile, refreshProfile }) {
         disabled={busy}
         style={{ marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
       >
-        💾 {busy ? 'সেভ হচ্ছে...' : 'SAVE CHANGES'}
+        💾 {busy ? t('saving') : t('saveChanges')}
       </button>
     </div>
   )
@@ -605,24 +608,16 @@ function DarkInput({ value, onChange, placeholder, readOnly, disabled, maxLength
 }
 
 function LanguageModal({ onClose }) {
-  const [lang, setLang] = useState(() => localStorage.getItem('xts-lang') || 'bn')
-
-  function choose(l) {
-    setLang(l)
-    localStorage.setItem('xts-lang', l)
-  }
+  const { lang, switchLang, t } = useLanguage()
 
   return (
     <div className="overlay overlay-center" onClick={onClose}>
       <div className="sheet sheet-compact" onClick={(e) => e.stopPropagation()}>
         <button className="close-btn" onClick={onClose}>✕</button>
-        <h2>Language</h2>
+        <h2>{t('language')}</h2>
         <div className="mode-toggle">
-          <button type="button" className={'mode-btn' + (lang === 'bn' ? ' active' : '')} onClick={() => choose('bn')}>বাংলা</button>
-          <button type="button" className={'mode-btn' + (lang === 'en' ? ' active' : '')} onClick={() => choose('en')}>English</button>
-        </div>
-        <div className="note" style={{ marginTop: 14 }}>
-          এই মুহূর্তে পুরো app-এর টেক্সট translate করা এখনো বাকি — শুধু preference সেভ হচ্ছে, পরে পুরোপুরি language switch যুক্ত করা যাবে।
+          <button type="button" className={'mode-btn' + (lang === 'bn' ? ' active' : '')} onClick={() => switchLang('bn')}>বাংলা</button>
+          <button type="button" className={'mode-btn' + (lang === 'en' ? ' active' : '')} onClick={() => switchLang('en')}>English</button>
         </div>
       </div>
     </div>
@@ -632,6 +627,7 @@ function LanguageModal({ onClose }) {
 function RequestModal({ type, onClose, userId, maxAmount }) {
   const { user, resendVerificationEmail } = useAuth()
   const { showToast } = useToast()
+  const { t } = useLanguage()
   const [method, setMethod] = useState('Rocket')
   const [amount, setAmount] = useState('')
   const [account, setAccount] = useState('')
@@ -664,14 +660,14 @@ function RequestModal({ type, onClose, userId, maxAmount }) {
 
   async function submit() {
     if (isWithdraw && user && !user.emailVerified) {
-      return showToast('warning', 'Withdraw করার আগে আপনার Email verify করতে হবে — ইনবক্স চেক করুন, অথবা নিচের "ভেরিফিকেশন ইমেইল আবার পাঠান" বাটনে চাপুন')
+      return showToast('warning', t('withdrawEmailWarning'))
     }
-    if (!amount || Number(amount) <= 0) return showToast('warning', 'সঠিক Amount দিন')
-    if (isWithdraw && Number(amount) < 110) return showToast('warning', 'সর্বনিম্ন Withdraw ৳110')
-    if (isWithdraw && Number(amount) > maxAmount) return showToast('error', 'আপনার Winning Balance এর চেয়ে বেশি withdraw করা যাবে না')
-    if (isWithdraw && !account) return showToast('warning', `${method} Account Number দিন`)
-    if (!isWithdraw && !receiveNumber) return showToast('warning', 'এই Method-এ কোনো নম্বর সেট করা নেই, অন্য method বেছে নিন')
-    if (!isWithdraw && !txnId) return showToast('warning', 'Payment করার পর Transaction ID দিন')
+    if (!amount || Number(amount) <= 0) return showToast('warning', t('amountLabel'))
+    if (isWithdraw && Number(amount) < 110) return showToast('warning', t('minimumWithdrawWarning'))
+    if (isWithdraw && Number(amount) > maxAmount) return showToast('error', t('insufficientBalance'))
+    if (isWithdraw && !account) return showToast('warning', t('giveTransactionId', { method }))
+    if (!isWithdraw && !receiveNumber) return showToast('warning', t('noNumberSet'))
+    if (!isWithdraw && !txnId) return showToast('warning', t('needTransactionId'))
 
     setBusy(true)
     try {
@@ -685,10 +681,10 @@ function RequestModal({ type, onClose, userId, maxAmount }) {
         status: 'pending',
         requestedAt: serverTimestamp(),
       })
-      showToast('success', 'Request জমা হয়েছে। Admin verify করার পর balance আপডেট হবে।')
+      showToast('success', t('requestSubmitted'))
       onClose()
     } catch (err) {
-      showToast('error', 'সমস্যা হয়েছে, আবার চেষ্টা করুন')
+      showToast('error', t('somethingWentWrong'))
     } finally {
       setBusy(false)
     }
@@ -698,9 +694,9 @@ function RequestModal({ type, onClose, userId, maxAmount }) {
     <div className="overlay overlay-center" onClick={onClose}>
       <div className="sheet sheet-compact" onClick={(e) => e.stopPropagation()}>
         <button className="close-btn" onClick={onClose}>✕</button>
-        <h2>{isWithdraw ? 'Withdraw' : 'Add Money'}</h2>
+        <h2>{isWithdraw ? t('withdrawTitle') : t('addMoneyTitle')}</h2>
         <div className="meta">
-          {isWithdraw ? 'Winning Balance থেকে Withdraw request দিন (fee 10%)' : 'Payment করে Transaction ID দিন, admin verify করবে'}
+          {isWithdraw ? t('withdrawDesc') : t('addMoneyDesc')}
         </div>
 
         {isWithdraw && user && !user.emailVerified && (
@@ -710,7 +706,7 @@ function RequestModal({ type, onClose, userId, maxAmount }) {
               borderRadius: 10, padding: 12, marginBottom: 14, fontSize: 13, color: '#fbbf24',
             }}
           >
-            ⚠️ Withdraw করার আগে Email verify করতে হবে। ইনবক্স (ও Spam ফোল্ডার) চেক করুন।
+            ⚠️ {t('emailVerifyWarning')}
             <button
               type="button"
               onClick={async () => {
@@ -722,13 +718,13 @@ function RequestModal({ type, onClose, userId, maxAmount }) {
                 color: '#fbbf24', textDecoration: 'underline', cursor: 'pointer', padding: 0, fontSize: 13,
               }}
             >
-              {resent ? '✅ আবার পাঠানো হয়েছে' : 'ভেরিফিকেশন ইমেইল আবার পাঠান'}
+              {resent ? '✅ ' + t('resent') : t('resendVerificationEmail')}
             </button>
           </div>
         )}
 
         <div className="field">
-          <label>Method</label>
+          <label>{t('method')}</label>
           <select
             value={method}
             onChange={(e) => setMethod(e.target.value)}
@@ -743,29 +739,29 @@ function RequestModal({ type, onClose, userId, maxAmount }) {
         {!isWithdraw && payNumbers && (
           receiveNumber ? (
             <div className={'pay-instructions ' + method.toLowerCase()}>
-              <p>{DIAL_CODES[method]} ডায়াল করুন অথবা {method} অ্যাপ খুলুন।</p>
-              <p>"Send Money" অপশনে ট্যাপ করুন।</p>
-              <p>নিচের নম্বরটি প্রাপক হিসেবে দিন।</p>
+              <p>{t('dialOrOpen', { code: DIAL_CODES[method], method })}</p>
+              <p>{t('tapSendMoney')}</p>
+              <p>{t('enterReceiverNumber')}</p>
               <div className="pay-number-row">
                 <span>{receiveNumber}</span>
-                <button type="button" onClick={copyNumber}>{copied ? 'কপি হয়েছে ✓' : '⧉ Copy'}</button>
+                <button type="button" onClick={copyNumber}>{copied ? t('copied') : '⧉ Copy'}</button>
               </div>
-              <p>পেমেন্ট নিশ্চিত করে সম্পন্ন করুন।</p>
-              <p>নিচে শুধু Transaction ID লিখে Submit করুন — Amount নিজে লিখে দিন।</p>
+              <p>{t('confirmPayment')}</p>
+              <p>{t('enterTxnAndAmount')}</p>
             </div>
           ) : (
-            <div className="note">এই মুহূর্তে {method}-এর নম্বর সেট করা নেই। অন্য method বেছে নিন, অথবা admin কে Payment Settings-এ নম্বর বসাতে বলুন।</div>
+            <div className="note">{t('noNumberForMethod', { method })}</div>
           )
         )}
 
         <div className="field">
-          <label>Amount (৳)</label>
-          <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={isWithdraw ? 'Minimum ৳110' : '৳'} />
+          <label>{t('amount')}</label>
+          <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={isWithdraw ? t('minimumWithdraw') : '৳'} />
         </div>
 
         {isWithdraw && (
           <div className="field">
-            <label>আপনার {method} নম্বর (যেখানে টাকা পাঠানো হবে)</label>
+            <label>{t('accountNumber', { method })}</label>
             <input
               type="text"
               value={account}
@@ -779,13 +775,13 @@ function RequestModal({ type, onClose, userId, maxAmount }) {
 
         {!isWithdraw && (
           <div className="field">
-            <label>Transaction ID</label>
+            <label>{t('transactionId')}</label>
             <input type="text" value={txnId} onChange={(e) => setTxnId(e.target.value)} placeholder="TXN..." />
           </div>
         )}
 
         <button className="join-btn" onClick={submit} disabled={busy}>
-          {busy ? '...' : isWithdraw ? 'SUBMIT WITHDRAWAL REQUEST' : 'SUBMIT PAYMENT'}
+          {busy ? '...' : isWithdraw ? t('submitWithdrawal') : t('submitPayment')}
         </button>
       </div>
     </div>
@@ -794,6 +790,7 @@ function RequestModal({ type, onClose, userId, maxAmount }) {
 
 function PaymentSettingsModal({ onClose }) {
   const { showToast } = useToast()
+  const { t } = useLanguage()
   const [bkash, setBkash] = useState('')
   const [nagad, setNagad] = useState('')
   const [rocket, setRocket] = useState('')
@@ -820,7 +817,7 @@ function PaymentSettingsModal({ onClose }) {
       setSaved(true)
       setTimeout(() => setSaved(false), 1500)
     } catch (err) {
-      showToast('error', 'সেভ করা যায়নি')
+      showToast('error', t('saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -830,27 +827,27 @@ function PaymentSettingsModal({ onClose }) {
     <div className="overlay overlay-center" onClick={onClose}>
       <div className="sheet sheet-compact" onClick={(e) => e.stopPropagation()}>
         <button className="close-btn" onClick={onClose}>✕</button>
-        <h2>Payment Settings</h2>
-        <div className="meta">Add Money screen-এ যেই নম্বর দেখানো হবে, সেগুলো এখানে বসান</div>
+        <h2>{t('paymentSettingsTitle')}</h2>
+        <div className="meta">{t('paymentSettingsDesc')}</div>
 
         {loading ? (
-          <div className="meta">লোড হচ্ছে...</div>
+          <div className="meta">{t('loading')}</div>
         ) : (
           <>
             <div className="field">
-              <label>bKash নম্বর (খালি রাখলে TopUp এ দেখাবে না)</label>
+              <label>{t('bkashNumber')}</label>
               <input type="text" placeholder="01XXXXXXXXX" value={bkash} onChange={(e) => setBkash(e.target.value)} />
             </div>
             <div className="field">
-              <label>Nagad নম্বর</label>
+              <label>{t('nagadNumber')}</label>
               <input type="text" placeholder="01XXXXXXXXX" value={nagad} onChange={(e) => setNagad(e.target.value)} />
             </div>
             <div className="field">
-              <label>Rocket নম্বর</label>
+              <label>{t('rocketNumber')}</label>
               <input type="text" placeholder="01XXXXXXXXX" value={rocket} onChange={(e) => setRocket(e.target.value)} />
             </div>
             <button className="join-btn" onClick={save} disabled={saving}>
-              {saving ? '...' : saved ? 'সেভ হয়েছে ✓' : 'সেভ করুন'}
+              {saving ? '...' : saved ? t('saved') : t('save')}
             </button>
           </>
         )}
