@@ -78,21 +78,17 @@ export default function Admin() {
         const winning = u.winningBalance || 0
 
         let update
-        let referrerRef = null
-        let referrerSnap = null
 
         if (r.type === 'add') {
           // Add Money সবসময় Deposit-এ যোগ হয়
+          // (রেফারেল বোনাস আর এখানে দেওয়া হয় না — এটা এখন স্বয়ংক্রিয়ভাবে
+          // referred user-এর *প্রথম booking* সম্পন্ন হলে দেওয়া হয়, দেখুন
+          // src/hooks/useJoinMatch.js। এতে Profile.jsx-এর Invite Friends
+          // sheet-এ দেওয়া প্রতিশ্রুতির সাথে মিলে যায়, এবং একই referral
+          // একাধিকবার পে হওয়ার ঝুঁকিও থাকে না।)
           update = {
             walletBalance: currentBalance + r.amount,
             depositBalance: deposit + r.amount,
-          }
-
-          // Referral বোনাস — শুধু এই user-এর *প্রথম* approved deposit-এই একবার দেওয়া হবে
-          if (u.referredBy && !u.firstDepositBonusGiven) {
-            referrerRef = doc(db, 'users', u.referredBy)
-            referrerSnap = await tx.get(referrerRef) // transaction-এ সব read আগে, write পরে করতে হয়
-            update.firstDepositBonusGiven = true
           }
         } else {
           // Withdraw শুধু Winning balance থেকেই কাটা যায়
@@ -105,15 +101,6 @@ export default function Admin() {
 
         tx.update(userRef, update)
         tx.update(reqRef, { status: 'approved', approvedAt: serverTimestamp() })
-
-        if (referrerRef && referrerSnap && referrerSnap.exists()) {
-          const rd = referrerSnap.data()
-          tx.update(referrerRef, {
-            walletBalance: (rd.walletBalance || 0) + 5,
-            winningBalance: (rd.winningBalance || 0) + 5,
-            referralEarnings: (rd.referralEarnings || 0) + 5,
-          })
-        }
       })
 
       // Log it into the unified transaction history — best-effort, shouldn't

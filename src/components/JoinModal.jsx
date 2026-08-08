@@ -1,21 +1,23 @@
 import { useState } from 'react'
 import { useToast } from '../components/ToastContext'
+import { useLanguage } from '../context/LanguageContext'
 
 export default function JoinModal({ tournament: t, onClose, onConfirm }) {
   const { showToast } = useToast()
+  const { t: tr } = useLanguage()
   const [ign, setIgn] = useState('')
   const [teammateIgn, setTeammateIgn] = useState('')
   const [busy, setBusy] = useState(false)
 
   if (!t) return null
 
-  const mode = t.teamMode === 'duo' ? 'duo' : 'solo' // ইউজার বেছে নেয় না, ম্যাচ থেকেই ফিক্সড আসে
+  const mode = t.teamMode === 'duo' ? 'duo' : 'solo'
   const players = mode === 'duo' ? 2 : 1
   const totalCost = t.entryFee * players
 
   async function handleSubmit() {
-    if (!ign.trim()) return showToast('warning', 'আপনার Free Fire আইডির নাম লিখুন')
-    if (mode === 'duo' && !teammateIgn.trim()) return showToast('warning', 'আপনার সাথীর Free Fire আইডির নাম লিখুন')
+    if (!ign.trim()) return showToast('warning', tr('enterFreeFireId'))
+    if (mode === 'duo' && !teammateIgn.trim()) return showToast('warning', tr('enterTeammateFreeFireId'))
 
     setBusy(true)
     try {
@@ -45,7 +47,7 @@ export default function JoinModal({ tournament: t, onClose, onConfirm }) {
         style={{ maxHeight: 'calc(100vh - 32px)', overflowY: 'auto', margin: 0 }}
       >
         <button className="close-btn" onClick={onClose}>✕</button>
-        <h2>⚔️ MATCH এ জয়েন করুন</h2>
+        <h2>⚔️ {tr('joinMatch')}</h2>
 
         <div className="join-summary">
           <div className="join-summary-title">🎮 {t.title} <span className="ok-badge">✓</span></div>
@@ -55,37 +57,37 @@ export default function JoinModal({ tournament: t, onClose, onConfirm }) {
         </div>
 
         <div className="field">
-          <label>👥 ম্যাচ টাইপ</label>
+          <label>👥 {tr('matchType')}</label>
           <div className="join-summary-sub">
-            {mode === 'duo' ? '👥 DUO — দুইজন মিলে খেলবেন' : '🧍 SOLO — একা খেলবেন'}
+            {mode === 'duo' ? `👥 ${tr('duoDesc')}` : `🧍 ${tr('soloDesc')}`}
           </div>
         </div>
 
         <div className="field">
-          <label>✏️ আপনার Free Fire আইডির নামটি কপি করে দিন</label>
-          <input type="text" placeholder="যে নামে গেম খেলবেন" value={ign} onChange={(e) => setIgn(e.target.value)} />
+          <label>✏️ {tr('yourFreeFireId')}</label>
+          <input type="text" placeholder={tr('ignPlaceholder')} value={ign} onChange={(e) => setIgn(e.target.value)} />
         </div>
 
         {mode === 'duo' && (
           <div className="field">
-            <label>✏️ সাথীর Free Fire আইডির নাম</label>
-            <input type="text" placeholder="সাথী যে নামে গেম খেলবেন" value={teammateIgn} onChange={(e) => setTeammateIgn(e.target.value)} />
+            <label>✏️ {tr('teammateFreeFireId')}</label>
+            <input type="text" placeholder={tr('teammateIgnPlaceholder')} value={teammateIgn} onChange={(e) => setTeammateIgn(e.target.value)} />
           </div>
         )}
 
         <div className="note" style={{ marginTop: 0, marginBottom: 14 }}>
           {mode === 'solo'
-            ? 'Solo সিলেক্ট করা আছে — র‍্যান্ডম প্লেয়ার আপনার টিমমেট হবে'
-            : 'Duo সিলেক্ট করা আছে — আপনারা দুইজন একই টিমে খেলবেন'}
+            ? tr('soloNote')
+            : tr('duoNote')}
         </div>
 
         <div className="join-total-row">
-          <span>মোট খরচ ({players} জন)</span>
+          <span>{tr('totalCost')} ({players} {tr('persons')})</span>
           <span>৳{totalCost}</span>
         </div>
 
         <button className="join-btn join-btn-cta" onClick={handleSubmit} disabled={busy}>
-          {busy ? '...' : `⚔️ JOIN NOW — ৳${totalCost}`}
+          {busy ? '...' : `⚔️ ${tr('joinNow')} — ৳${totalCost}`}
         </button>
       </div>
     </div>

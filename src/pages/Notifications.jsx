@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useNotifications } from '../hooks/useNotifications'
 import { useConfirm } from '../components/ConfirmContext'
+import { useLanguage } from '../context/LanguageContext'
 
 const TYPE_ICON = {
   room_ready: '🎮',
@@ -12,9 +13,9 @@ const TYPE_ICON = {
   announcement: '📢',
 }
 
-function formatTime(ts) {
-  if (!ts?.toDate) return ''
-  return ts.toDate().toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' })
+function formatTime(ts, dateLocale) {
+   if (!ts?.toDate) return ''
+  return ts.toDate().toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' })
 }
 
 function groupByDay(notifications) {
@@ -33,17 +34,16 @@ function groupByDay(notifications) {
   return groups
 }
 
-const GROUP_LABEL = { Today: 'আজ', Yesterday: 'গতকাল', Earlier: 'আগের' }
-
 export default function Notifications() {
   const { notifications, unreadCount, loading, markAsRead, markAllAsRead, removeNotification, clearAll } = useNotifications()
   const confirmAction = useConfirm()
   const navigate = useNavigate()
+  const { t, dateLocale } = useLanguage()
 
   const groups = useMemo(() => groupByDay(notifications), [notifications])
 
   async function handleClearAll() {
-    if (!(await confirmAction('সব notification মুছে ফেলবেন? এটা undo করা যাবে না।', { danger: true }))) return
+    if (!(await confirmAction(t('confirmClearAll'), { danger: true }))) return
     clearAll()
   }
 
@@ -59,40 +59,46 @@ export default function Notifications() {
     }
   }
 
+  function getGroupLabel(key) {
+    if (key === 'Today') return t('today')
+    if (key === 'Yesterday') return t('yesterday')
+    return t('earlier')
+  }
+
   return (
     <div className="screen page-fade-in">
       <div className="section-title">
-        <h2>Notifications</h2>
-        <span>{unreadCount > 0 ? `${unreadCount}টি অপঠিত` : 'সব পঠিত'}</span>
+        <h2>{t('notifications')}</h2>
+        <span>{unreadCount > 0 ? `${unreadCount} ${t('unreadCount')}` : t('allRead')}</span>
       </div>
 
       {notifications.length > 0 && (
         <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
           {unreadCount > 0 && (
             <button className="tab" onClick={markAllAsRead} style={{ cursor: 'pointer' }}>
-              ✓ Mark all as read
+              {t('markAllAsRead')}
             </button>
           )}
           <button className="tab" onClick={handleClearAll} style={{ cursor: 'pointer', color: '#f87171' }}>
-            🗑️ Clear all
+            {t('clearAll')}
           </button>
         </div>
       )}
 
-      {loading && <div className="meta">লোড হচ্ছে...</div>}
+      {loading && <div className="meta">{t('loading')}</div>}
 
       {!loading && notifications.length === 0 && (
         <div className="empty">
           <div className="glyph">🔔</div>
-          <h3>কোনো Notification নেই</h3>
-          <p>নতুন Room ID, Refund, Result বা Announcement এলে এখানে দেখতে পাবেন।</p>
+          <h3>{t('noNotifications')}</h3>
+          <p>{t('noNotificationsDesc')}</p>
         </div>
       )}
 
       {['Today', 'Yesterday', 'Earlier'].map((key) =>
         groups[key].length > 0 ? (
           <div key={key} style={{ marginBottom: 20 }}>
-            <div className="meta" style={{ marginBottom: 8, fontWeight: 700 }}>{GROUP_LABEL[key]}</div>
+            <div className="meta" style={{ marginBottom: 8, fontWeight: 700 }}>{getGroupLabel(key)}</div>
             <div className="bracket-list">
               {groups[key].map((n) => (
                 <div
@@ -110,7 +116,7 @@ export default function Notifications() {
                     <div>
                       <div className="row-name">{n.title}</div>
                       <div className="row-sub">{n.body}</div>
-                      <div className="row-sub" style={{ opacity: 0.6, marginTop: 4 }}>{formatTime(n.createdAt)}</div>
+                      <div className="row-sub" style={{ opacity: 0.6, marginTop: 4 }}>{formatTime(n.createdAt, dateLocale)}</div>
                     </div>
                   </div>
                   <button

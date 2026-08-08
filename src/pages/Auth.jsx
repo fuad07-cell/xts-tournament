@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth'
 import { auth } from '../firebase'
 import { useToast } from '../components/ToastContext'
+import { useLanguage } from '../context/LanguageContext'
 
 // Median (native APK wrapper) app-e amader website eta userAgent-e "median" add kore diye
 // pathay — eta diye bujha jay browser-e naki app-er vitor thakay
@@ -50,8 +51,19 @@ export default function Auth() {
   const { showToast } = useToast()
   const { registerWithEmail, loginWithEmail, loginWithGoogle, resetPassword } = useAuth()
   const navigate = useNavigate()
+  const { t } = useLanguage()
 
   const isRegister = mode === 'register'
+
+  function friendlyError(err) {
+    const code = err?.code || ''
+    if (code.includes('email-already-in-use')) return t('errorEmailInUse')
+    if (code.includes('invalid-credential') || code.includes('wrong-password')) return t('errorInvalidCredential')
+    if (code.includes('user-not-found')) return t('errorUserNotFound')
+    if (code.includes('popup-closed-by-user')) return t('errorPopupClosed')
+    if (code.includes('invalid-email')) return t('errorInvalidEmail')
+    return t('errorGeneric')
+  }
 
   async function handleGoogle() {
     setBusy(true)
@@ -74,15 +86,15 @@ export default function Auth() {
 
     if (isRegister) {
       if (!username || !email || !password || !confirm) {
-        showToast('warning', 'সব ঘর পূরণ করুন')
+        showToast('warning', t('fillAllFields'))
         return
       }
       if (password !== confirm) {
-        showToast('warning', 'Password ও Confirm Password মিলছে না')
+        showToast('warning', t('passwordMismatch'))
         return
       }
       if (password.length < 6) {
-        showToast('warning', 'Password কমপক্ষে ৬ ক্যারেক্টার হতে হবে')
+        showToast('warning', t('passwordMinLength'))
         return
       }
     }
@@ -104,13 +116,13 @@ export default function Auth() {
 
   async function handleForgotPassword() {
     if (!email) {
-      showToast('warning', 'আগে উপরে Email লিখুন, তারপর Forgot password চাপুন')
+      showToast('warning', t('needEmailFirst'))
       return
     }
     setBusy(true)
     try {
       await resetPassword(email)
-      showToast('success', 'Password reset লিংক আপনার ইমেইলে পাঠানো হয়েছে ✓')
+      showToast('success', t('passwordResetSent'))
     } catch (err) {
       showToast('error', friendlyError(err))
     } finally {
@@ -129,10 +141,10 @@ export default function Auth() {
             className={'auth-nav-btn' + (!isRegister ? ' active-mode' : '')}
             onClick={() => setMode('login')}
           >
-            LOGIN
+            {t('login')}
           </button>
           <button className="auth-nav-btn pill" onClick={() => setMode('register')}>
-            REGISTER
+            {t('register')}
           </button>
         </div>
       </div>
@@ -143,30 +155,30 @@ export default function Auth() {
           <span className="auth-logo-icon">⚔️</span>
           <span><span className="bracket">XTS</span> TOUR BD</span>
         </div>
-        <div className="auth-tagline">ENTER THE ARENA</div>
+        <div className="auth-tagline">{t('enterTheArena')}</div>
       </div>
 
       <div className="auth-card">
         <div className="mode-head">
-          <h1>{isRegister ? 'Create your account' : 'Welcome back'}</h1>
+          <h1>{isRegister ? t('createAccount') : t('welcomeBack')}</h1>
           <p>
             {isRegister
-              ? 'Register to join tournaments and track your winnings'
-              : 'Login to continue to your dashboard'}
+              ? t('registerDesc')
+              : t('loginDesc')}
           </p>
         </div>
 
         <button className="google-btn" onClick={handleGoogle} disabled={busy}>
           <GoogleIcon />
-          {isRegister ? 'SIGN UP WITH GOOGLE' : 'CONTINUE WITH GOOGLE'}
+          {isRegister ? t('signUpWithGoogle') : t('continueWithGoogle')}
         </button>
 
-        <div className="divider">{isRegister ? 'OR REGISTER MANUALLY' : 'OR LOGIN MANUALLY'}</div>
+        <div className="divider">{isRegister ? t('orRegisterManually') : t('orLoginManually')}</div>
 
         <form onSubmit={handleSubmit}>
           {isRegister && (
             <div className="field">
-              <label>Username</label>
+              <label>{t('username')}</label>
               <input
                 type="text"
                 placeholder="GamerTag"
@@ -215,7 +227,7 @@ export default function Auth() {
 
           {isRegister && (
             <div className="field">
-              <label>🎁 Referral / Promo Code <span className="opt">(না দিলেও হবে)</span></label>
+              <label>{t('referralCode')} <span className="opt">{t('referralOptional')}</span></label>
               <input
                 type="text"
                 placeholder="XTS-XXXXXX"
@@ -228,45 +240,35 @@ export default function Auth() {
           {!isRegister && (
             <div className="forgot-row">
               <button type="button" className="link-btn-inline" onClick={handleForgotPassword} disabled={busy}>
-                Forgot password?
+                {t('forgotPassword')}
               </button>
             </div>
           )}
 
           <button className="submit-btn" type="submit" disabled={busy}>
-            {busy ? '...' : isRegister ? 'REGISTER' : 'LOGIN'}
+            {busy ? '...' : isRegister ? t('register') : t('login')}
           </button>
         </form>
 
         <div className="switch-line">
           {isRegister ? (
             <>
-              Already have an account?{' '}
-              <button onClick={() => setMode('login')}>Login</button>
+              {t('alreadyHaveAccount')}{' '}
+              <button onClick={() => setMode('login')}>{t('login')}</button>
             </>
           ) : (
             <>
-              Don't have an account?{' '}
-              <button onClick={() => setMode('register')}>Register</button>
+              {t('dontHaveAccount')}{' '}
+              <button onClick={() => setMode('register')}>{t('register')}</button>
             </>
           )}
         </div>
 
-        <div className="auth-footer">Secured by <span className="bracket">XTS</span> Tournament</div>
+        <div className="auth-footer">{t('securedBy')} <span className="bracket">XTS</span> Tournament</div>
       </div>
       </div>
     </div>
   )
-}
-
-function friendlyError(err) {
-  const code = err?.code || ''
-  if (code.includes('email-already-in-use')) return 'এই Email দিয়ে আগে থেকেই একটা account আছে'
-  if (code.includes('invalid-credential') || code.includes('wrong-password')) return 'Email অথবা Password ভুল'
-  if (code.includes('user-not-found')) return 'এই Email দিয়ে কোনো account পাওয়া যায়নি'
-  if (code.includes('popup-closed-by-user')) return 'Google login বাতিল করা হয়েছে'
-  if (code.includes('invalid-email')) return 'সঠিক Email দিন'
-  return 'কিছু একটা সমস্যা হয়েছে, আবার চেষ্টা করুন'
 }
 
 function GoogleIcon() {

@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import { getCategoryByKey } from '../constants/categories'
 
 // ============================================================
@@ -145,12 +146,13 @@ function getCategoryVisual(categoryKey) {
 
 // ============================================================
 // Format Date for Display
+// Accepts a months array (from t('months')) for localized month names
 // ============================================================
-function formatDateDisplay(dateStr) {
+function formatDateDisplay(dateStr, months) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
-  const months = ['জানু', 'ফেব', 'মার্চ', 'এপ্রি', 'মে', 'জুন', 'জুলা', 'আগ', 'সেপ', 'অক্টো', 'নভে', 'ডিসে']
-  return `${d.getDate()} ${months[d.getMonth()]}`
+  const monthNames = months || ['জানু', 'ফেব', 'মার্চ', 'এপ্রি', 'মে', 'জুন', 'জুলা', 'আগ', 'সেপ', 'অক্টো', 'নভে', 'ডিসে']
+  return `${d.getDate()} ${monthNames[d.getMonth()]}`
 }
 
 // ============================================================
@@ -264,7 +266,8 @@ function useEnrichedEntries(user) {
 // ============================================================
 // Match Card Component
 // ============================================================
-function MatchCard({ match, index, onSubmitResult }) {
+function MatchCard({ match, index, onSubmitResult, months }) {
+  const { t } = useLanguage()
   const status = match.computedStatus
   const [copiedField, setCopiedField] = useState(null)
 
@@ -359,7 +362,7 @@ function MatchCard({ match, index, onSubmitResult }) {
                 fontFamily: "'Rajdhani', sans-serif",
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
-                {match.title || match.tournamentName || 'টুর্নামেন্ট'}
+                {match.title || match.tournamentName || t('matchDefaultName')}
               </h3>
               <p style={{ margin: '3px 0 0', fontSize: 10.5, color: '#4A5270', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {match.map ? `${match.map}` : ''}
@@ -371,19 +374,19 @@ function MatchCard({ match, index, onSubmitResult }) {
           {/* Stats grid */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 10px' }}>
             <div>
-              <p style={{ margin: 0, fontSize: 9.5, color: '#3D4560', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Entry Fee</p>
+              <p style={{ margin: 0, fontSize: 9.5, color: '#3D4560', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{t('entryFeeLabel')}</p>
               <p style={{ margin: '2px 0 0', fontSize: 13.5, fontWeight: 800, color: '#F5A623', fontFamily: "'Rajdhani', sans-serif" }}>৳{match.entryFee}</p>
             </div>
             <div>
-              <p style={{ margin: 0, fontSize: 9.5, color: '#3D4560', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Prize Pool</p>
+              <p style={{ margin: 0, fontSize: 9.5, color: '#3D4560', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{t('prizePoolLabel')}</p>
               <p style={{ margin: '2px 0 0', fontSize: 13.5, fontWeight: 800, color: '#3DDC84', fontFamily: "'Rajdhani', sans-serif" }}>৳{(match.prizePool || 0).toLocaleString()}</p>
             </div>
             <div>
-              <p style={{ margin: 0, fontSize: 9.5, color: '#3D4560', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Date</p>
-              <p style={{ margin: '2px 0 0', fontSize: 12, fontWeight: 600, color: '#C8D0E0' }}>{formatDateDisplay(match.date || match.tournamentData?.date)}</p>
+              <p style={{ margin: 0, fontSize: 9.5, color: '#3D4560', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{t('date')}</p>
+              <p style={{ margin: '2px 0 0', fontSize: 12, fontWeight: 600, color: '#C8D0E0' }}>{formatDateDisplay(match.date || match.tournamentData?.date, months)}</p>
             </div>
             <div>
-              <p style={{ margin: 0, fontSize: 9.5, color: '#3D4560', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Start Time</p>
+              <p style={{ margin: 0, fontSize: 9.5, color: '#3D4560', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{t('startTime')}</p>
               <p style={{ margin: '2px 0 0', fontSize: 12, fontWeight: 600, color: '#C8D0E0' }}>{match.time || match.tournamentData?.time || '—'}</p>
             </div>
           </div>
@@ -396,11 +399,11 @@ function MatchCard({ match, index, onSubmitResult }) {
               background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)',
             }}>
               <span style={{ fontSize: 10.5, color: '#4A5270', fontWeight: 600 }}>
-                Room: <span style={{ color: '#fff', fontFamily: 'monospace', fontWeight: 700 }}>{match.roomId}</span>
+                {t('roomLabel')}: <span style={{ color: '#fff', fontFamily: 'monospace', fontWeight: 700 }}>{match.roomId}</span>
               </span>
               {match.roomPassword && (
                 <span style={{ fontSize: 10.5, color: '#4A5270', fontWeight: 600 }}>
-                  Pass: <span style={{ color: '#fff', fontFamily: 'monospace', fontWeight: 700 }}>{match.roomPassword}</span>
+                  {t('passLabel')}: <span style={{ color: '#fff', fontFamily: 'monospace', fontWeight: 700 }}>{match.roomPassword}</span>
                 </span>
               )}
               <button
@@ -427,19 +430,19 @@ function MatchCard({ match, index, onSubmitResult }) {
                   letterSpacing: '0.04em',
                 }}
               >
-                ⚡ SUBMIT RESULT
+                ⚡ {t('submitResult')}
               </button>
             )}
 
             {status === 'live' && match.result && match.result.status !== 'rejected' && (
               <div style={{ width: '100%', textAlign: 'center', padding: '10px 0', fontSize: 12.5, fontWeight: 800, borderRadius: 12, background: 'rgba(61,220,132,0.1)', color: '#3DDC84', border: '1px solid rgba(61,220,132,0.25)', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.04em' }}>
-                ✓ RESULT SUBMITTED
+                ✓ {t('resultSubmittedBadge')}
               </div>
             )}
 
             {status === 'live' && match.result && match.result.status === 'rejected' && (
               <div style={{ width: '100%', textAlign: 'center', padding: '10px 0', fontSize: 12.5, fontWeight: 800, borderRadius: 12, background: 'rgba(255,92,92,0.1)', color: '#FF5C5C', border: '1px solid rgba(255,92,92,0.25)', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.04em' }}>
-                ✕ NOT APPROVED
+                ✕ {t('notApprovedBadge')}
               </div>
             )}
 
@@ -450,19 +453,19 @@ function MatchCard({ match, index, onSubmitResult }) {
                 fontSize: 12.5, fontWeight: 700, color: '#F5A623',
                 fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.03em',
               }}>
-                ⏱ Starts In: <CountdownTimer targetMs={matchStartMs} />
+                ⏱ {t('startsInTime')} <CountdownTimer targetMs={matchStartMs} />
               </div>
             )}
 
             {status === 'completed' && (
               <div style={{ width: '100%', textAlign: 'center', padding: '10px 0', fontSize: 12.5, fontWeight: 800, borderRadius: 12, background: 'rgba(61,220,132,0.1)', color: '#3DDC84', border: '1px solid rgba(61,220,132,0.25)', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.04em' }}>
-                🏆 COMPLETED{match.result?.status === 'approved' && isBr && match.result.finalPosition ? ` · #${match.result.finalPosition}` : ''}
+                🏆 {t('completedBadge')}{match.result?.status === 'approved' && isBr && match.result.finalPosition ? ` · #${match.result.finalPosition}` : ''}
               </div>
             )}
 
             {status === 'expired' && (
               <div style={{ width: '100%', textAlign: 'center', padding: '10px 0', fontSize: 12.5, fontWeight: 700, borderRadius: 12, background: 'rgba(255,255,255,0.04)', color: '#3D4560', border: '1px solid rgba(255,255,255,0.06)', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.04em' }}>
-                SUBMISSION CLOSED
+                {t('submissionClosedBadge')}
               </div>
             )}
           </div>
@@ -475,7 +478,8 @@ function MatchCard({ match, index, onSubmitResult }) {
 // ============================================================
 // Submit Result Modal (your existing logic preserved + new UI)
 // ============================================================
-function SubmitResultModal({ entry, userId, onClose }) {
+function SubmitResultModal({ entry, userId, onClose, months }) {
+  const { t } = useLanguage()
   const [kills, setKills] = useState('')
   const [position, setPosition] = useState('')
   const [file, setFile] = useState(null)
@@ -492,9 +496,9 @@ function SubmitResultModal({ entry, userId, onClose }) {
   }
 
   async function submit() {
-    if (kills === '' || Number(kills) < 0) return alert('কতগুলো kill করেছেন লিখুন (০ হলেও লিখুন)')
-    if (isBr && (position === '' || Number(position) < 1)) return alert('কত নম্বর Position এ শেষ করেছেন লিখুন')
-    if (!file) return alert('Result screen-এর screenshot আপলোড করুন')
+    if (kills === '' || Number(kills) < 0) return alert(t('enterKillCount'))
+    if (isBr && (position === '' || Number(position) < 1)) return alert(t('enterPosition'))
+    if (!file) return alert(t('uploadScreenshot'))
 
     const apiKey = import.meta.env.VITE_IMGBB_API_KEY
 
@@ -522,7 +526,7 @@ function SubmitResultModal({ entry, userId, onClose }) {
       screenshotURL = data.data.url
     } catch (err) {
       console.error('Screenshot upload error:', err)
-      alert('Screenshot upload এ সমস্যা — ' + err.message)
+      alert(t('screenshotUploadError') + err.message)
       setBusy(false)
       return
     }
@@ -541,11 +545,11 @@ function SubmitResultModal({ entry, userId, onClose }) {
         status: 'pending',
         submittedAt: serverTimestamp(),
       })
-      alert('Result জমা হয়েছে। Admin verify করার পর ফলাফল দেখা যাবে।')
+      alert(t('resultSubmittedMsg'))
       onClose()
     } catch (err) {
       console.error('Firestore save error:', err)
-      alert('Firestore-এ সেভ করতে সমস্যা — ' + err.code + ': ' + err.message)
+      alert(t('somethingWentWrong') + ' — ' + (err.code || '') + ': ' + err.message)
     } finally {
       setBusy(false)
     }
@@ -556,7 +560,7 @@ function SubmitResultModal({ entry, userId, onClose }) {
       <div className="sheet" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 448, width: '100%', borderRadius: '16px 16px 0 0', maxHeight: '85vh', overflowY: 'auto' }}>
         {/* Header */}
         <div className="flex items-center justify-between" style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>📤 রেজাল্ট জমা দিন</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>📤 {t('submitResultTitle')}</h2>
           <button
             onClick={onClose}
             style={{
@@ -572,13 +576,13 @@ function SubmitResultModal({ entry, userId, onClose }) {
         {/* Match Info */}
         <div className="rounded-lg" style={{ padding: 12, marginBottom: 20, background: '#0A0E17', border: '1px solid #2A3150' }}>
           <p style={{ fontSize: 14, fontWeight: 600, color: '#fff', margin: 0 }}>{entry.title}</p>
-          <p style={{ fontSize: 12, color: '#8892A8', margin: '4px 0 0' }}>{entry.gameMode || entry.category} • {entry.map || ''} • {formatDateDisplay(entry.date)}</p>
+          <p style={{ fontSize: 12, color: '#8892A8', margin: '4px 0 0' }}>{entry.gameMode || entry.category} • {entry.map || ''} • {formatDateDisplay(entry.date, months)}</p>
         </div>
 
         {/* Kills */}
         <div style={{ marginBottom: 20 }}>
           <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#8892A8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-            কতগুলো Kill করেছেন?
+            {t('howManyKills')}
           </label>
           <input
             type="number"
@@ -598,14 +602,14 @@ function SubmitResultModal({ entry, userId, onClose }) {
         {isBr && (
           <div style={{ marginBottom: 20 }}>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#8892A8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-              কত নম্বর Position এ শেষ করেছেন?
+              {t('whichPosition')}
             </label>
             <input
               type="number"
               min="1"
               value={position}
               onChange={(e) => setPosition(e.target.value)}
-              placeholder="১ = Winner"
+              placeholder="1 = Winner"
               style={{
                 width: '100%', padding: '12px 16px', borderRadius: 8, background: '#0A0E17',
                 border: '1px solid #2A3150', color: '#fff', fontSize: 18, fontWeight: 600,
@@ -618,7 +622,7 @@ function SubmitResultModal({ entry, userId, onClose }) {
         {/* Screenshot */}
         <div style={{ marginBottom: 24 }}>
           <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#8892A8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-            Result Screen-এর Screenshot
+            {t('resultScreenshot')}
           </label>
           <div
             onClick={() => fileInputRef.current?.click()}
@@ -639,7 +643,7 @@ function SubmitResultModal({ entry, userId, onClose }) {
             ) : (
               <div>
                 <div style={{ fontSize: 28, marginBottom: 8 }}>📸</div>
-                <p style={{ fontSize: 14, color: '#8892A8', margin: 0 }}>ছবি আপলোড করতে ক্লিক করুন</p>
+                <p style={{ fontSize: 14, color: '#8892A8', margin: 0 }}>{t('clickToUpload')}</p>
               </div>
             )}
           </div>
@@ -659,7 +663,7 @@ function SubmitResultModal({ entry, userId, onClose }) {
             transition: 'all 0.3s',
           }}
         >
-          {busy ? 'আপলোড হচ্ছে...' : 'রেজাল্ট জমা দিন'}
+          {busy ? t('uploading') : t('submitResult')}
         </button>
       </div>
     </div>
@@ -670,11 +674,12 @@ function SubmitResultModal({ entry, userId, onClose }) {
 // Section Header (for "all" view grouping)
 // ============================================================
 function SectionHeader({ status, count, onViewAll }) {
+  const { t } = useLanguage()
   const configs = {
-    live:      { label: 'LIVE MATCHES',      color: '#FF5C5C', bg: 'rgba(255,92,92,0.12)', dot: '#FF3B3B' },
-    upcoming:  { label: 'UPCOMING MATCHES',  color: '#F5A623', bg: 'rgba(245,166,35,0.1)', dot: '#F5A623' },
-    completed: { label: 'COMPLETED MATCHES', color: '#3DDC84', bg: 'rgba(61,220,132,0.1)', dot: '#3DDC84' },
-    expired:   { label: 'EXPIRED MATCHES',   color: '#4A5270', bg: 'rgba(255,255,255,0.05)', dot: '#4A5270' },
+    live:      { label: t('liveMatchSection'),      color: '#FF5C5C', bg: 'rgba(255,92,92,0.12)', dot: '#FF3B3B' },
+    upcoming:  { label: t('upcomingMatchSection'),  color: '#F5A623', bg: 'rgba(245,166,35,0.1)', dot: '#F5A623' },
+    completed: { label: t('completedMatchSection'), color: '#3DDC84', bg: 'rgba(61,220,132,0.1)', dot: '#3DDC84' },
+    expired:   { label: t('expiredMatchSection'),   color: '#4A5270', bg: 'rgba(255,255,255,0.05)', dot: '#4A5270' },
   }
   const c = configs[status]
   if (!c) return null
@@ -702,7 +707,7 @@ function SectionHeader({ status, count, onViewAll }) {
         className="view-all-btn"
         style={{ fontSize: 11.5, fontWeight: 700, color: '#4A5270', background: 'none', border: 'none', cursor: 'pointer', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.04em' }}
       >
-        VIEW ALL ›
+        {t('viewAll')}
       </button>
     </div>
   )
@@ -713,11 +718,15 @@ function SectionHeader({ status, count, onViewAll }) {
 // ============================================================
 export default function Matches() {
   const { user } = useAuth()
+  const { t, dateLocale } = useLanguage()
   const { enriched, loading } = useEnrichedEntries(user)
   const [activeFilter, setActiveFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [resultModalFor, setResultModalFor] = useState(null)
   const [, setTick] = useState(0)
+
+  // Localized months array
+  const months = t('months')
 
   // Tick every second for status recalculation
   useEffect(() => {
@@ -760,11 +769,11 @@ export default function Matches() {
 
   // Filter tabs config
   const FILTERS = [
-    { key: 'all', label: 'সব' },
-    { key: 'live', label: '🟢 লাইভ' },
-    { key: 'upcoming', label: '🟡 আসছে' },
-    { key: 'completed', label: '🔵 সম্পন্ন' },
-    { key: 'expired', label: '🔴 মেয়াদোত্তীর্ণ' },
+    { key: 'all', label: t('all') },
+    { key: 'live', label: '🟢 ' + t('live') },
+    { key: 'upcoming', label: '🟡 ' + t('upcoming') },
+    { key: 'completed', label: '🔵 ' + t('completed') },
+    { key: 'expired', label: '🔴 ' + t('expired') },
   ]
 
   return (
@@ -894,11 +903,11 @@ export default function Matches() {
                   background: 'linear-gradient(135deg, #fff 60%, rgba(245,166,35,0.8))',
                   WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                 }}>
-                  আমার ম্যাচ
+                  {t('myMatchesTitle')}
                 </h1>
               </div>
               <p style={{ fontSize: 12, color: '#4A5270', margin: 0, fontWeight: 500, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                Tournament Match Tracker
+                {t('tournamentMatchTrackerSub')}
               </p>
             </div>
 
@@ -917,7 +926,7 @@ export default function Matches() {
               <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: "'Rajdhani', sans-serif" }}>
                 {counts.all}
               </span>
-              <span style={{ fontSize: 11, color: '#4A5270', fontWeight: 500 }}>MATCHES</span>
+              <span style={{ fontSize: 11, color: '#4A5270', fontWeight: 500 }}>{t('matchesCount')}</span>
             </div>
           </div>
 
@@ -931,7 +940,7 @@ export default function Matches() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="ম্যাচ খুঁজুন — নাম, মোড, ম্যাপ..."
+              placeholder={t('searchMatches')}
               className="search-input"
               style={{
                 width: '100%', padding: '12px 16px 12px 42px',
@@ -1030,12 +1039,12 @@ export default function Matches() {
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36,
             }}>🎮</div>
             <h3 style={{ fontSize: 20, fontWeight: 800, color: '#fff', margin: '0 0 10px', fontFamily: "'Rajdhani', sans-serif", letterSpacing: '0.02em' }}>
-              কোনো ম্যাচ নেই
+              {t('noMatchFoundTitle')}
             </h3>
             <p style={{ fontSize: 13.5, color: '#4A5270', maxWidth: 260, margin: '0 auto', lineHeight: 1.6, fontFamily: "'Inter', sans-serif" }}>
               {searchQuery
-                ? 'সার্চের সাথে মিলে এমন কোনো ম্যাচ পাওয়া যায়নি।'
-                : 'Home থেকে একটি টুর্নামেন্টে জয়েন করুন!'}
+                ? t('noSearchResult')
+                : t('joinFromHomeMsg')}
             </p>
           </div>
         )}
@@ -1056,6 +1065,7 @@ export default function Matches() {
               match={match}
               index={index}
               onSubmitResult={(m) => setResultModalFor(m)}
+              months={months}
             />
           </div>
         ))}
@@ -1067,6 +1077,7 @@ export default function Matches() {
           entry={resultModalFor}
           userId={user.uid}
           onClose={() => setResultModalFor(null)}
+          months={months}
         />
       )}
     </div>

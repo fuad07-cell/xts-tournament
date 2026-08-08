@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getMatchTime } from '../utils/matchTime'
+import { useLanguage } from '../context/LanguageContext'
 
 function getStatus(t) {
   const now = Date.now()
@@ -9,11 +10,11 @@ function getStatus(t) {
   if (t.status === 'closed') return 'expired'
   if (matchTime && matchTime < now) return 'expired'
   if (isFull) return 'full'
-  if (matchTime && matchTime - now < 30 * 60 * 1000) return 'live' // ম্যাচ শুরুর ৩০ মিনিট আগে থেকে "লাইভ" badge
+  if (matchTime && matchTime - now < 30 * 60 * 1000) return 'live'
   return 'upcoming'
 }
 
-function useCountdown(t) {
+function useCountdown(t, alreadyStartedLabel) {
   const [label, setLabel] = useState('')
 
   useEffect(() => {
@@ -23,7 +24,7 @@ function useCountdown(t) {
     function tick() {
       const diff = target - Date.now()
       if (diff <= 0) {
-        setLabel('শুরু হয়ে গেছে')
+        setLabel(alreadyStartedLabel)
         return
       }
       const d = Math.floor(diff / 86400000)
@@ -35,21 +36,21 @@ function useCountdown(t) {
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
-  }, [t])
+  }, [t, alreadyStartedLabel])
 
   return label
 }
 
-function formatDate(t) {
+function formatDate(t, dateLocale, dateTBALabel) {
   const ms = getMatchTime(t)
-  if (!ms) return 'তারিখ শীঘ্রই জানানো হবে'
-  return new Date(ms).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short' })
+  if (!ms) return dateTBALabel
+  return new Date(ms).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' })
 }
 
-function formatTime(t) {
+function formatTime(t, dateLocale) {
   const ms = getMatchTime(t)
   if (!ms) return ''
-  return new Date(ms).toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' })
+  return new Date(ms).toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' })
 }
 
 function ripple(e) {
@@ -66,12 +67,18 @@ function ripple(e) {
 }
 
 export default function TournamentCard({ tournament: t, image, onRegisterClick, onPrizeClick, onRoomClick, onRulesClick, joined }) {
+  const { t: tr, isBn, dateLocale } = useLanguage()
   const status = getStatus(t)
-  const countdown = useCountdown(t)
+  const countdown = useCountdown(t, tr('alreadyStarted'))
   const slotsLeft = Math.max((t.slots || 0) - (t.filled || 0), 0)
   const fillPct = t.slots ? Math.min(((t.filled || 0) / t.slots) * 100, 100) : 0
 
-  const badgeLabel = { live: 'লাইভ শীঘ্রই', upcoming: 'UPCOMING', full: 'পূর্ণ', expired: 'শেষ' }[status]
+  const badgeLabel = {
+    live: tr('liveSoonBadge'),
+    upcoming: tr('upcoming'),
+    full: tr('full'),
+    expired: tr('expired'),
+  }[status]
   const canJoin = status !== 'expired' && status !== 'full' && !joined
 
   function handleRegister(e) {
@@ -90,20 +97,20 @@ export default function TournamentCard({ tournament: t, image, onRegisterClick, 
           <span className={'tour-status-badge-inline ' + status}>{badgeLabel}</span>
         </div>
 
-        <div className="tour-date">{formatDate(t)}</div>
-        {formatTime(t) && <div className="tour-time">{formatTime(t)}</div>}
+        <div className="tour-date">{formatDate(t, dateLocale, tr('dateTBA'))}</div>
+        {formatTime(t, dateLocale) && <div className="tour-time">{formatTime(t, dateLocale)}</div>}
 
         <div className="tour-stats">
           <div className="tour-stat">
-            <div className="label">Prize Pool</div>
+            <div className="label">{tr('prizePool')}</div>
             <div className="value blue">৳{t.prizePool}</div>
           </div>
           <div className="tour-stat">
-            <div className="label">Per Kill</div>
+            <div className="label">{tr('perKill')}</div>
             <div className="value orange">৳{t.perKill || 0}</div>
           </div>
           <div className="tour-stat">
-            <div className="label">Entry Fee</div>
+            <div className="label">{tr('entryFee')}</div>
             <div className="value pink">৳{t.entryFee}</div>
           </div>
         </div>
@@ -119,7 +126,7 @@ export default function TournamentCard({ tournament: t, image, onRegisterClick, 
             <div className="tour-spots-bar">
               <div className="tour-spots-fill" style={{ width: `${fillPct}%` }} />
             </div>
-            <span>Only <strong>{slotsLeft}</strong> spots left</span>
+            <span>{tr('onlySpotsLeft', { slots: slotsLeft })}</span>
           </div>
 
           <button
@@ -127,18 +134,18 @@ export default function TournamentCard({ tournament: t, image, onRegisterClick, 
             onClick={handleRegister}
             disabled={!canJoin}
           >
-            {joined ? '✅ Joined' : status === 'expired' ? 'শেষ' : status === 'full' ? 'পূর্ণ' : 'JOIN NOW'}
+            {joined ? `✅ ${tr('joined')}` : status === 'expired' ? tr('expired') : status === 'full' ? tr('full') : tr('joinNow')}
           </button>
         </div>
 
         <div className="tour-card-actions">
-          <button className="tour-secondary-btn" onClick={() => onRoomClick(t)}>🔑 Room ID</button>
-          <button className="tour-secondary-btn" onClick={() => onPrizeClick(t)}>🏆 Prize Pool</button>
+          <button className="tour-secondary-btn" onClick={() => onRoomClick(t)}>🔑 {tr('roomId')}</button>
+          <button className="tour-secondary-btn" onClick={() => onPrizeClick(t)}>🏆 {tr('prizePoolBtn')}</button>
         </div>
-        <button className="tour-secondary-btn tour-rules-btn" onClick={() => onRulesClick(t)}>📋 Rules</button>
+        <button className="tour-secondary-btn tour-rules-btn" onClick={() => onRulesClick(t)}>📋 {tr('rules')}</button>
 
         {status !== 'expired' && getMatchTime(t) && (
-          <div className="tour-countdown-bar">🕒 STARTS IN <strong>{countdown}</strong></div>
+          <div className="tour-countdown-bar">🕒 {tr('startsInLabel')} <strong>{countdown}</strong></div>
         )}
       </div>
     </div>

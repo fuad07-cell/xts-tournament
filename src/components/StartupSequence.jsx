@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useLanguage } from '../context/LanguageContext'
 import './StartupSequence.css'
 
 // ---------------------------------------------------------------------------
@@ -11,16 +12,17 @@ import './StartupSequence.css'
 
 const APP_NAME = 'TOURNAMENT'
 
-const LOADING_STEPS = [
-  { at: 0, text: 'Initializing...' },
-  { at: 25, text: 'Loading assets...' },
-  { at: 60, text: 'Preparing tournaments...' },
-  { at: 88, text: 'Almost Ready...' },
-]
-
 export default function StartupSequence({ onDone }) {
+  const { t } = useLanguage()
   const [phase, setPhase] = useState('splash')
   const [progress, setProgress] = useState(0)
+
+  const LOADING_STEPS = [
+    { at: 0, text: t('initializing') },
+    { at: 25, text: t('loadingAssets') },
+    { at: 60, text: t('preparingTournaments') },
+    { at: 88, text: t('almostReady') },
+  ]
 
   const reduceMotion = useMemo(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -77,7 +79,6 @@ export default function StartupSequence({ onDone }) {
       className={'startup' + (phase === 'exit' ? ' startup-exit' : '')}
       role="status"
       aria-live="polite"
-      aria-label="XTS Tournament BD লোড হচ্ছে"
     >
       <span className="startup-glow startup-glow-a" aria-hidden="true" />
       <span className="startup-glow startup-glow-b" aria-hidden="true" />
@@ -97,7 +98,7 @@ export default function StartupSequence({ onDone }) {
             </span>
             <span className="logo-sub splash-sub">BD</span>
           </div>
-          <div className="splash-tag">COMPETITIVE ESPORTS ARENA</div>
+          <div className="splash-tag">{t('competitiveEsportsArena')}</div>
         </div>
 
         {/* ---------- Phase 2: Loading ---------- */}

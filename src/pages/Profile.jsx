@@ -221,10 +221,7 @@ export default function Profile() {
   const navigate = useNavigate()
   const [modal, setModal] = useState(null)
   const [theme, setTheme] = useState(() => localStorage.getItem('xts-theme') || 'dark')
-  const [copied, setCopied] = useState(false)
   const [emailCopied, setEmailCopied] = useState(false)
-
-  const referralCode = user ? 'XTS-' + user.uid.slice(0, 6).toUpperCase() : ''
 
   // Wallet card premium interaction: cursor-reactive spotlight + 3D tilt.
   // Writes CSS custom properties directly via ref (no React re-render on every
@@ -262,12 +259,6 @@ export default function Profile() {
     localStorage.setItem('xts-theme', next)
   }
 
-  function copyReferral() {
-    navigator.clipboard.writeText(referralCode)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
-  }
-
   function copyEmail() {
     navigator.clipboard.writeText(user?.email || '')
     setEmailCopied(true)
@@ -277,7 +268,7 @@ export default function Profile() {
   const menuItems = [
     { key: 'history', icon: '🕓', color: 'blue', title: 'Transaction History', sub: 'View your wallet credits and debits.', action: () => navigate('/transactions') },
     { key: 'edit', icon: '✎', color: 'purple', title: 'Edit Profile', sub: 'Keep your account accurate and verified.', action: () => setModal('edit') },
-    { key: 'invite', icon: '👥', color: 'green', title: 'Invite Friends', sub: 'Earn ৳5 for each invite.', action: () => setModal('invite') },
+    { key: 'invite', icon: '👥', color: 'green', title: 'Invite Friends', sub: 'Earn ৳5 for each invite.', action: () => navigate('/invite') },
     { key: 'leaderboard', icon: '🏆', color: 'orange', title: 'Leaderboard', sub: 'Track your progress for each goals.', action: () => navigate('/leaderboard') },
     { key: 'payment', icon: '💳', color: 'blue', title: 'Payment Settings', sub: 'bKash/Nagad/Rocket receiving number.', action: () => setModal('payment'), adminOnly: true },
     { key: 'admin', icon: '🛠️', color: 'purple', title: 'Admin Panel', sub: 'Manage wallet, matches & results.', action: () => navigate('/admin'), adminOnly: true },
@@ -431,23 +422,6 @@ export default function Profile() {
       {modal === 'add' && <RequestModal type="add" onClose={() => setModal(null)} userId={user.uid} />}
       {modal === 'withdraw' && (
         <RequestModal type="withdraw" onClose={() => setModal(null)} userId={user.uid} maxAmount={profile?.winningBalance ?? 0} />
-      )}
-      {modal === 'invite' && (
-        <div className="overlay overlay-center" onClick={() => setModal(null)}>
-          <div className="sheet sheet-compact" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setModal(null)}>✕</button>
-            <h2>বন্ধুদের ইনভাইট করুন</h2>
-            <div className="meta">প্রতিটা invite এ ৳5 আয় করুন (প্রথম বুকিং সম্পন্ন হলে)</div>
-            <div className="field">
-              <label>আপনার রেফারেল কোড</label>
-              <input type="text" value={referralCode} readOnly />
-            </div>
-            <button className="join-btn" onClick={copyReferral}>{copied ? 'কপি হয়েছে ✓' : 'কোড কপি করুন'}</button>
-            <div className="note" style={{ marginTop: 14 }}>
-              এই মুহূর্তে কোড শেয়ার করা যায়, কিন্তু automatic reward crediting এখনো backend এ যুক্ত করা হয়নি।
-            </div>
-          </div>
-        </div>
       )}
       {modal === 'dev' && (
         <div className="overlay overlay-center" onClick={() => setModal(null)}>

@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useLanguage } from '../context/LanguageContext'
 
 function HomeIcon() {
   return (
@@ -41,14 +42,15 @@ function ProfileIcon() {
   )
 }
 
-const items = [
-  { to: '/', Icon: HomeIcon, label: 'Home', end: true },
-  { to: '/matches', Icon: MatchesIcon, label: 'My Matches' },
-  { to: '/leaderboard', Icon: LeaderboardIcon, label: 'Leaderboard' },
-  { to: '/profile', Icon: ProfileIcon, label: 'Profile' },
-]
-
 export default function BottomNav() {
+  const { t } = useLanguage()
+  const items = [
+    { to: '/', Icon: HomeIcon, label: t('home'), end: true },
+    { to: '/matches', Icon: MatchesIcon, label: t('myMatches') },
+    { to: '/leaderboard', Icon: LeaderboardIcon, label: t('leaderboard') },
+    { to: '/profile', Icon: ProfileIcon, label: t('profile') },
+  ]
+
   return (
     <div className="bottom-nav">
       {items.map((item) => (

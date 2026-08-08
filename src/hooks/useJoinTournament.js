@@ -1,6 +1,8 @@
 import { doc, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../components/ToastContext'
+import { useLanguage } from '../context/LanguageContext'
 
 // Same Firebase transaction logic that used to live inside Home.jsx's
 // joinTournament(), extracted so CategoryPage/Matches can reuse it without
@@ -20,21 +22,23 @@ import { useAuth } from '../context/AuthContext'
 // by Firestore itself, not just by disabling a button in the UI.
 export function useJoinTournament() {
   const { user, refreshProfile } = useAuth()
+  const { showToast } = useToast()
+  const { t } = useLanguage()
 
-  async function joinTournament(t, details = null) {
+  async function joinTournament(tournament, details = null) {
     if (!user) {
-      alert('অনুগ্রহ করে আগে লগইন করুন')
+      showToast('error', t('fillAllFields'))
       return false
     }
 
     const mode = details?.mode || 'solo'
     const ign = details?.ign || null
     const teammateIgn = details?.teammateIgn || null
-    const totalCost = details?.totalCost ?? t.entryFee
+    const totalCost = details?.totalCost ?? tournament.entryFee
 
     const userRef = doc(db, 'users', user.uid)
-    const tRef = doc(db, 'tournaments', t.id)
-    const entryRef = doc(db, 'entries', `${t.id}_${user.uid}`)
+    const tRef = doc(db, 'tournaments', tournament.id)
+    const entryRef = doc(db, 'entries', `${tournament.id}_${user.uid}`)
 
     try {
       await runTransaction(db, async (tx) => {
@@ -45,7 +49,7 @@ export function useJoinTournament() {
         ])
 
         if (entrySnap.exists()) {
-          throw new Error('আপনি ইতিমধ্যে এই ম্যাচে জয়েন করেছেন — একই আইডি থেকে একটি ম্যাচে একবারই স্লট কেনা যায়')
+          throw new Error(t('alreadyJoinedError'))
         }
 
         const userData = userSnap.data()
@@ -55,8 +59,8 @@ export function useJoinTournament() {
         const filled = tSnap.data().filled || 0
         const slots = tSnap.data().slots || 0
 
-        if (filled >= slots) throw new Error('এই ম্যাচের স্লট পূর্ণ হয়ে গেছে')
-        if (totalBalance < totalCost) throw new Error('Balance যথেষ্ট নয়। আগে Add Money করুন')
+        if (filled >= slots) throw new Error(t('slotsFullError'))
+        if (totalBalance < totalCost) throw new Error(t('insufficientBalanceError'))
 
         // Winning balance আগে কাটো, তারপর deposit থেকে
         let remainingFee = totalCost
@@ -82,9 +86,9 @@ export function useJoinTournament() {
 
         tx.set(entryRef, {
           userId: user.uid,
-          tournamentId: t.id,
-          title: t.title,
-          category: t.category,
+          tournamentId: tournament.id,
+          title: tournament.title,
+          category: tournament.category,
           entryFee: totalCost,
           mode,
           ign,
@@ -94,10 +98,10 @@ export function useJoinTournament() {
         })
       })
       await refreshProfile()
-      alert('ম্যাচে জয়েন করা হয়েছে! "My Matches" থেকে দেখুন।')
+      showToast('success', t('joinSuccess'))
       return true
     } catch (err) {
-      alert(err.message || 'জয়েন করা যায়নি, আবার চেষ্টা করুন')
+      showToast('error', err.message || t('joinFailed'))
       return false
     }
   }

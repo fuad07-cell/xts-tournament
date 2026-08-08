@@ -12,6 +12,7 @@ export const TRANSACTION_TYPES = {
   refund: { label: 'Refund', icon: '↩️', color: 'mint', direction: 'in' },
   prize: { label: 'Prize', icon: '🏆', color: 'mint', direction: 'in' },
   checkin: { label: 'Check-in Bonus', icon: '✨', color: 'mint', direction: 'in' },
+  referral: { label: 'Referral Bonus', icon: '🎁', color: 'mint', direction: 'in' },
   adjustment: { label: 'Admin Adjustment', icon: '⚙️', color: 'red', direction: 'out' },
 }
 
@@ -25,6 +26,7 @@ export const HISTORY_FILTERS = [
   { key: 'refund', label: 'REFUND' },
   { key: 'prize', label: 'PRIZE' },
   { key: 'checkin', label: 'CHECK-IN' },
+  { key: 'referral', label: 'REFERRAL' },
 ]
 
 /**

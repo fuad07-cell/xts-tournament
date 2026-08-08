@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { WHATSAPP_LINK, TELEGRAM_SUPPORT_LINK } from '../constants/links'
+import { useLanguage } from '../context/LanguageContext'
 
 // ---------------------------------------------------------------------------
 // Floating Support button — premium "breathing" FAB with glow + pulse ring.
@@ -36,28 +37,29 @@ function spawnRipple(container, clientX, clientY) {
   setTimeout(() => span.remove(), 600)
 }
 
-const SUPPORT_OPTIONS = [
-  {
-    key: 'whatsapp',
-    href: WHATSAPP_LINK,
-    className: 'whatsapp',
-    title: 'WhatsApp Support',
-    sub: 'Chat on WhatsApp',
-    Icon: WhatsAppIcon,
-  },
-  {
-    key: 'telegram',
-    href: TELEGRAM_SUPPORT_LINK,
-    className: 'telegram',
-    title: 'Telegram Support',
-    sub: 'Chat on Telegram',
-    Icon: TelegramIcon,
-  },
-]
-
 export default function SupportButton() {
+  const { t } = useLanguage()
   const [open, setOpen] = useState(false)
   const [closing, setClosing] = useState(false)
+
+  const SUPPORT_OPTIONS = [
+    {
+      key: 'whatsapp',
+      href: WHATSAPP_LINK,
+      className: 'whatsapp',
+      title: t('whatsappSupport'),
+      sub: t('chatOnWhatsapp'),
+      Icon: WhatsAppIcon,
+    },
+    {
+      key: 'telegram',
+      href: TELEGRAM_SUPPORT_LINK,
+      className: 'telegram',
+      title: t('telegramSupport'),
+      sub: t('chatOnTelegram'),
+      Icon: TelegramIcon,
+    },
+  ]
 
   // null = not moved yet, use the default CSS corner position (bottom/right)
   const [pos, setPos] = useState(() => {
@@ -184,17 +186,17 @@ export default function SupportButton() {
         onKeyDown={handleKeyDown}
         role="button"
         tabIndex={0}
-        aria-label="Support"
+        aria-label={t('support')}
         aria-haspopup="dialog"
         aria-expanded={open}
-        title="Support — ধরে টেনে যেকোনো জায়গায় সরাতে পারবেন"
+        title={t('support') + ' — ' + t('dragToMove')}
       >
         <span className="support-fab-glow" aria-hidden="true" />
         <span className="support-fab-ping" aria-hidden="true" />
         <span ref={btnRef} className="support-fab">
           <HeadsetIcon />
         </span>
-        <span className="support-fab-label">SUPPORT</span>
+        <span className="support-fab-label">{t('support')}</span>
       </div>
 
       {open && (
@@ -207,12 +209,12 @@ export default function SupportButton() {
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
-            aria-label="Contact Support"
+            aria-label={t('contactSupport')}
           >
             <div className="support-popup-head">
               <div>
-                <h2>Contact Support</h2>
-                <p className="support-popup-sub">যেকোনো একটি মাধ্যমে যোগাযোগ করুন</p>
+                <h2>{t('contactSupport')}</h2>
+                <p className="support-popup-sub">{t('contactAnyMedium')}</p>
               </div>
               <button className="support-popup-close" onClick={requestClose} aria-label="Close">✕</button>
             </div>

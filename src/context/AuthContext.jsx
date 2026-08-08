@@ -132,7 +132,7 @@ export function AuthProvider({ children }) {
         matchesPlayed: 0,
         referralCode: makeReferralCode(fbUser.uid),
         referredBy,
-        referralBonusPaid: false, // flips true once the referrer has been paid their ৳5 (see Admin wallet approval)
+        referralBonusPaid: false, // flips true once the referrer has been paid their ৳5 — see useJoinMatch.js (fires on this user's first completed booking)
         createdAt: serverTimestamp(),
       })
     }
@@ -162,7 +162,7 @@ export function AuthProvider({ children }) {
       matchesPlayed: 0,
       referralCode: makeReferralCode(cred.user.uid),
       referredBy,
-      referralBonusPaid: false,
+      referralBonusPaid: false, // see useJoinMatch.js — fires on this user's first completed booking
       createdAt: serverTimestamp(),
     })
     return cred.user

@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import TournamentCard from '../components/TournamentCard'
 import CardSkeleton from '../components/CardSkeleton'
 import PrizeModal from '../components/PrizeModal'
@@ -13,22 +14,23 @@ import { getMatchTime, isExpired } from '../utils/matchTime'
 import { useJoinMatch } from '../hooks/useJoinMatch'
 
 const SORT_OPTIONS = [
-  { key: 'earliest', label: 'তারিখ — Earliest First' },
-  { key: 'latest', label: 'তারিখ — Latest First' },
-  { key: 'prize_high', label: 'Highest Prize' },
-  { key: 'fee_low', label: 'Lowest Entry Fee' },
+  { key: 'earliest', labelKey: 'earliestFirst' },
+  { key: 'latest', labelKey: 'latestFirst' },
+  { key: 'prize_high', labelKey: 'highestPrize' },
+  { key: 'fee_low', labelKey: 'lowestEntryFee' },
 ]
 
 const FILTERS = [
-  { key: 'all', label: 'সব' },
-  { key: 'upcoming', label: 'Upcoming' },
-  { key: 'expired', label: 'Expired' },
+  { key: 'all', labelKey: 'all' },
+  { key: 'upcoming', labelKey: 'upcoming' },
+  { key: 'expired', labelKey: 'expired' },
 ]
 
 export default function CategoryPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
   const { user, profile, refreshProfile } = useAuth()
+  const { t } = useLanguage()
 
   const meta = getCategoryBySlug(slug)
   const [tournaments, setTournaments] = useState([])
@@ -77,10 +79,10 @@ export default function CategoryPage() {
   )
 
   const visible = useMemo(() => {
-    let list = tournaments.filter((t) => t.title?.toLowerCase().includes(search.toLowerCase()))
+    let list = tournaments.filter((tr) => tr.title?.toLowerCase().includes(search.toLowerCase()))
 
-    if (filter === 'upcoming') list = list.filter((t) => !isExpired(t))
-    if (filter === 'expired') list = list.filter((t) => isExpired(t))
+    if (filter === 'upcoming') list = list.filter((tr) => !isExpired(tr))
+    if (filter === 'expired') list = list.filter((tr) => isExpired(tr))
 
     list.sort((a, b) => {
       const aExp = isExpired(a), bExp = isExpired(b)
@@ -112,8 +114,8 @@ export default function CategoryPage() {
       <div className="screen">
         <div className="empty">
           <div className="glyph">✕</div>
-          <h3>এই ক্যাটাগরি পাওয়া যায়নি</h3>
-          <Link to="/" className="join-btn" style={{ display: 'inline-block', marginTop: 14, textDecoration: 'none' }}>Home এ ফিরুন</Link>
+          <h3>{t('categoryNotFound')}</h3>
+          <Link to="/" className="join-btn" style={{ display: 'inline-block', marginTop: 14, textDecoration: 'none' }}>{t('goHome')}</Link>
         </div>
       </div>
     )
@@ -125,7 +127,7 @@ export default function CategoryPage() {
         <img src={meta.image} alt={meta.label} />
         <Link to="/" className="cat-hero-back">←</Link>
         <div className="cat-hero-title">{meta.label}</div>
-        <div className="cat-hero-count">{tournaments.length}টি টুর্নামেন্ট</div>
+        <div className="cat-hero-count">{tournaments.length} {t('tournaments')}</div>
       </div>
 
       <div className="cat-toolbar">
@@ -133,7 +135,7 @@ export default function CategoryPage() {
           🔍
           <input
             type="text"
-            placeholder="ম্যাচ খুঁজুন..."
+            placeholder={t('searchMatchesShort')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -142,13 +144,13 @@ export default function CategoryPage() {
         <div className="cat-filters">
           {FILTERS.map((f) => (
             <div key={f.key} className={'chip' + (filter === f.key ? ' active' : '')} onClick={() => setFilter(f.key)}>
-              {f.label}
+              {t(f.labelKey)}
             </div>
           ))}
         </div>
 
         <select className="cat-sort-select" value={sort} onChange={(e) => setSort(e.target.value)}>
-          {SORT_OPTIONS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+          {SORT_OPTIONS.map((s) => <option key={s.key} value={s.key}>{t(s.labelKey)}</option>)}
         </select>
       </div>
 
@@ -157,21 +159,21 @@ export default function CategoryPage() {
       ) : visible.length === 0 ? (
         <div className="empty">
           <div className="glyph">◇</div>
-          <h3>কোনো ম্যাচ পাওয়া যায়নি</h3>
-          <p>ফিল্টার বদলে আবার চেষ্টা করুন, অথবা নতুন ম্যাচের জন্য অপেক্ষা করুন।</p>
+          <h3>{t('noMatchesFound')}</h3>
+          <p>{t('tryDifferentFilter')}</p>
         </div>
       ) : (
         <div className="tour-grid">
-          {visible.map((t) => (
+          {visible.map((tr) => (
             <TournamentCard
-              key={t.id}
-              tournament={t}
+              key={tr.id}
+              tournament={tr}
               image={meta.image}
-              onRegisterClick={(t) => setJoinTarget(t)}
-              onPrizeClick={(t) => setPrizeTarget(t)}
-              onRoomClick={(t) => setRoomTarget(t)}
-              onRulesClick={(t) => navigate(`/match/${t.id}/rules`)}
-              joined={joinedTournamentIds.has(t.id)}
+              onRegisterClick={(m) => setJoinTarget(m)}
+              onPrizeClick={(m) => setPrizeTarget(m)}
+              onRoomClick={(m) => setRoomTarget(m)}
+              onRulesClick={(m) => navigate(`/match/${m.id}/rules`)}
+              joined={joinedTournamentIds.has(tr.id)}
             />
           ))}
         </div>

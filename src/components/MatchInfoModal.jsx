@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
 import { RULES_BY_CATEGORY, DEFAULT_RULES } from '../constants/rules'
+import { useLanguage } from '../context/LanguageContext'
 
 // Combined "RULES / PLAYERS" popup opened from a tournament card — two
 // pill tabs at the top like the reference design. Rules come from the
@@ -10,6 +11,7 @@ import { RULES_BY_CATEGORY, DEFAULT_RULES } from '../constants/rules'
 export default function MatchInfoModal({ tournament: t, categoryKey, onClose }) {
   const [tab, setTab] = useState('rules')
   const [players, setPlayers] = useState([])
+  const { t: tr } = useLanguage()
 
   useEffect(() => {
     if (!t) return
@@ -49,7 +51,7 @@ export default function MatchInfoModal({ tournament: t, categoryKey, onClose }) 
               color: tab === 'rules' ? '#fff' : '#b8bcc8',
             }}
           >
-            📋 RULES
+            📋 {tr('matchRules')}
           </button>
           <button
             onClick={() => setTab('players')}
@@ -60,14 +62,14 @@ export default function MatchInfoModal({ tournament: t, categoryKey, onClose }) 
               color: tab === 'players' ? '#fff' : '#b8bcc8',
             }}
           >
-            👥 PLAYERS ({players.length})
+            👥 {tr('players')} ({players.length})
           </button>
         </div>
 
         <div style={{ padding: '0 16px 20px', maxHeight: '60vh', overflowY: 'auto' }}>
           {tab === 'rules' ? (
             <>
-              <h2 style={{ fontSize: 15, marginBottom: 12 }}>📋 MATCH RULES</h2>
+              <h2 style={{ fontSize: 15, marginBottom: 12 }}>📋 {tr('matchRules')}</h2>
               <div className="prize-list">
                 {rules.map((rule, i) => (
                   <div className="prize-row" key={i} style={{ alignItems: 'flex-start' }}>
@@ -79,16 +81,16 @@ export default function MatchInfoModal({ tournament: t, categoryKey, onClose }) 
             </>
           ) : (
             <>
-              <h2 style={{ fontSize: 15, marginBottom: 12 }}>👥 যারা জয়েন করেছেন</h2>
+              <h2 style={{ fontSize: 15, marginBottom: 12 }}>👥 {tr('joinedPlayers')}</h2>
               {players.length === 0 ? (
-                <p className="meta">এখনো কেউ জয়েন করেননি — প্রথম হয়ে যান!</p>
+                <p className="meta">{tr('noOneJoined')}</p>
               ) : (
                 <div className="prize-list">
                   {players.map((p, i) => (
                     <div className="prize-row" key={p.id}>
                       <span className="prize-icon">{i + 1}.</span>
                       <span className="prize-label">
-                        🎮 {p.ign || 'অজানা'}
+                        🎮 {p.ign || tr('unknown')}
                         {p.teammateIgn ? ` + ${p.teammateIgn}` : ''}
                       </span>
                     </div>

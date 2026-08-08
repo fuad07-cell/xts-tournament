@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import NotificationBell from './NotificationBell'
 
 function spawnRipple(e) {
@@ -17,6 +18,7 @@ function spawnRipple(e) {
 
 export default function TopBar() {
   const { profile } = useAuth()
+  const { t } = useLanguage()
   const navigate = useNavigate()
 
   return (
@@ -36,7 +38,7 @@ export default function TopBar() {
           type="button"
           className="topbar-icon-btn topbar-icon-trophy ripple-btn"
           onClick={(e) => { spawnRipple(e); navigate('/leaderboard') }}
-          aria-label="Leaderboard"
+          aria-label={t('leaderboard')}
         >
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M8 4H16V10C16 12.2091 14.2091 14 12 14C9.79086 14 8 12.2091 8 10V4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
@@ -60,7 +62,7 @@ export default function TopBar() {
             </svg>
           </span>
           <span className="topbar-wallet-text">
-            <span className="topbar-wallet-label">Wallet Balance</span>
+            <span className="topbar-wallet-label">{t('walletBalance')}</span>
             <span className="topbar-wallet-amount">৳ {profile?.walletBalance ?? 0}</span>
           </span>
           <svg className="topbar-wallet-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

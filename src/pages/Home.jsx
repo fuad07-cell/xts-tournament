@@ -4,6 +4,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
 import { CATEGORIES } from '../constants/categories'
 import { isExpired } from '../utils/matchTime'
+import { useLanguage } from '../context/LanguageContext'
 import NoticeBoard from '../components/NoticeBoard'
 import InfoBanners from '../components/InfoBanners'
 import NoticeTicker from '../components/NoticeTicker'
@@ -25,6 +26,7 @@ const CATEGORY_GLOW = {
 export default function Home() {
   const [tournaments, setTournaments] = useState([])
   const navigate = useNavigate()
+  const { t } = useLanguage()
 
   useEffect(() => {
     const q = query(collection(db, 'tournaments'), where('status', '==', 'open'))
@@ -54,8 +56,8 @@ export default function Home() {
       <HeroBanner />
 
       <div className="section-title">
-        <h2>ম্যাচ ক্যাটাগরি</h2>
-        <span>{CATEGORIES.length}টি মোড</span>
+        <h2>{t('matchCategories')}</h2>
+        <span>{CATEGORIES.length} {t('modes')}</span>
       </div>
 
       <div className="grid">
@@ -89,7 +91,7 @@ export default function Home() {
               <div className="info">
                 <h3>{c.label}</h3>
                 <div className={'count' + (count === 0 ? ' zero' : '')}>
-                  {count === 0 ? 'ম্যাচ নেই' : `${count}টি ম্যাচ পাওয়া গেছে`}
+                  {count === 0 ? t('noMatch') : `${count} ${t('matchesFound')}`}
                 </div>
               </div>
             </div>

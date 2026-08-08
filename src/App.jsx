@@ -13,6 +13,7 @@ import Leaderboard from './pages/Leaderboard'
 import Profile from './pages/Profile'
 import TransactionHistory from './pages/TransactionHistory'
 import Notifications from './pages/Notifications'
+import InviteFriends from './pages/InviteFriends'
 import { useEffect, useState } from 'react'
 import Admin from './pages/Admin'
 import { ToastProvider } from './components/ToastContext'
@@ -122,6 +123,16 @@ export default function App() {
           <ProtectedRoute>
             <AppShell>
               <Notifications />
+            </AppShell>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/invite"
+        element={
+          <ProtectedRoute>
+            <AppShell>
+              <InviteFriends />
             </AppShell>
           </ProtectedRoute>
         }

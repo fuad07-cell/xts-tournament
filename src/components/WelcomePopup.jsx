@@ -1,18 +1,8 @@
 import { useEffect, useState } from 'react'
 import { TELEGRAM_SUPPORT_LINK } from '../constants/links'
+import { useLanguage } from '../context/LanguageContext'
 
 // Shows once per calendar day when the user lands on Home.
-// Edit the RULES array below to change the notice text — one array item
-// per bullet line, shown in order.
-const RULES = [
-  '🆔 ম্যাচে জয়েন করার সময় আপনার Game ID-এর নাম ব্যবহার করুন।',
-  '🎥 Replay Record ON রাখা বাধ্যতামূলক। অভিযোগ এলে Admin কে Replay Video জমা দিতে হবে Telegram সাপোর্টে।',
-  '📖 ম্যাচে জয়েনের আগে Rules ভালোভাবে পড়ুন। Rules ভঙ্গ করলে Balance ০০ করা বা BAN করা হতে পারে।',
-  '⏳ Withdraw সর্বোচ্চ ১২ ঘণ্টা ভিতরে পেয়ে যাবেন।',
-  '💳 প্রতিদিন ১ বার Withdraw দিতে পারবেন।',
-  '⚠️ যেকোনো সমস্যায় অবশ্যই Telegram সাপোর্টে মেসেজ দিবেন, নিচে ক্লিক করুন 🫵',
-]
-
 const SEEN_KEY = 'xts_welcome_seen_date'
 
 function todayKey() {
@@ -21,7 +11,10 @@ function todayKey() {
 }
 
 export default function WelcomePopup() {
+  const { t } = useLanguage()
   const [open, setOpen] = useState(false)
+
+  const RULE_KEYS = ['noticeItem1', 'noticeItem2', 'noticeItem3', 'noticeItem4', 'noticeItem5', 'noticeItem6']
 
   useEffect(() => {
     const lastSeen = localStorage.getItem(SEEN_KEY)
@@ -53,12 +46,12 @@ export default function WelcomePopup() {
         style={{ maxHeight: 'calc(100vh - 32px)', overflowY: 'auto', margin: 0, textAlign: 'left' }}
       >
         <button className="close-btn" onClick={() => setOpen(false)}>✕</button>
-        <h2 style={{ textAlign: 'center' }}>📜 XTS TOUR BD – গুরুত্বপূর্ণ নিয়মাবলী 👇</h2>
+        <h2 style={{ textAlign: 'center' }}>{t('welcomeTitle')}</h2>
 
         <div className="prize-list" style={{ marginTop: 14, marginBottom: 18 }}>
-          {RULES.map((rule, i) => (
+          {RULE_KEYS.map((key, i) => (
             <div className="prize-row" key={i} style={{ alignItems: 'flex-start' }}>
-              <span className="prize-label">{rule}</span>
+              <span className="prize-label">{t(key)}</span>
             </div>
           ))}
         </div>
@@ -70,10 +63,10 @@ export default function WelcomePopup() {
           className="join-btn welcome-cta"
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
         >
-          📢 Telegram চ্যানেলে জয়েন করুন
+          {t('joinTelegram')}
         </a>
         <button className="welcome-dismiss" onClick={() => setOpen(false)} style={{ marginTop: 10 }}>
-          বুঝেছি
+          {t('understood')}
         </button>
       </div>
     </div>

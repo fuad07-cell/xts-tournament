@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { collection, query, where, onSnapshot, doc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import { getCategoryByKey } from '../constants/categories'
 import { getMatchTime } from '../utils/matchTime'
 import { RULES_BY_CATEGORY, DEFAULT_RULES } from '../constants/rules'
@@ -19,6 +20,7 @@ export default function MatchRulesPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { joinMatch } = useJoinMatch()
+  const { t, dateLocale } = useLanguage()
 
   const [tournament, setTournament] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -69,7 +71,7 @@ export default function MatchRulesPage() {
   if (loading) {
     return (
       <div className="screen">
-        <div className="cp-loading">লোড হচ্ছে…</div>
+        <div className="cp-loading">{t('loading')}</div>
       </div>
     )
   }
@@ -79,7 +81,7 @@ export default function MatchRulesPage() {
       <div className="screen">
         <div className="empty">
           <div className="glyph">✕</div>
-          <h3>ম্যাচটি পাওয়া যায়নি</h3>
+          <h3>{t('matchNotFound')}</h3>
         </div>
         <BackButton onClick={() => navigate(-1)} />
       </div>
@@ -105,31 +107,31 @@ export default function MatchRulesPage() {
           {category && <img className="cp-t-avatar" src={category.image} alt="" />}
           <div className="cp-t-top-text">
             <h3 className="cp-t-title">{tournament.title}</h3>
-            <span className="cp-t-rules">নিয়ম অবশ্যই পড়ে নিন ✅</span>
+            <span className="cp-t-rules">{t('readRules')}</span>
           </div>
           <span className={'cp-status-badge' + (expired ? ' expired' : '')}>
-            {expired ? 'Expired' : 'UPCOMING'}
+            {expired ? t('expired') : t('upcoming')}
           </span>
         </div>
 
         <div className="cp-t-datetime">
-          <span className="cp-t-date">{matchTime ? new Date(matchTime).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short' }) : 'তারিখ শীঘ্রই জানানো হবে'}</span>
-          <span className="cp-t-time-badge">⏰ {matchTime ? new Date(matchTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+          <span className="cp-t-date">{matchTime ? new Date(matchTime).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' }) : t('dateTBA')}</span>
+          <span className="cp-t-time-badge">⏰ {matchTime ? new Date(matchTime).toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
         </div>
 
         <div className="cp-t-highlight-row">
           <div className="cp-t-highlight-box prize">
-            <span className="cp-t-label">🏆 Win Prize</span>
+            <span className="cp-t-label">🏆 {t('winPrize')}</span>
             <span className="cp-t-highlight-value">৳{tournament.prizePool}</span>
           </div>
           {!!tournament.perKill && (
             <div className="cp-t-highlight-box kill">
-              <span className="cp-t-label">🔥 Per Kill</span>
+              <span className="cp-t-label">🔥 {t('perKill')}</span>
               <span className="cp-t-highlight-value">৳{tournament.perKill}</span>
             </div>
           )}
           <div className="cp-t-highlight-box fee">
-            <span className="cp-t-label">💰 Entry Fee</span>
+            <span className="cp-t-label">💰 {t('entryFee')}</span>
             <span className="cp-t-highlight-value">৳{tournament.entryFee}</span>
           </div>
         </div>
@@ -144,7 +146,7 @@ export default function MatchRulesPage() {
           <div className="cp-t-progress-bar">
             <div className="cp-t-progress-fill" style={{ width: `${fillPct}%` }} />
           </div>
-          <span>Only <strong>{spotsLeft}</strong> spots left</span>
+          <span>{t('onlySpotsLeft', { slots: spotsLeft })}</span>
         </div>
 
         <button
@@ -152,7 +154,7 @@ export default function MatchRulesPage() {
           disabled={disabled}
           onClick={() => setJoinOpen(true)}
         >
-          {expired ? 'Expired' : joined ? '✅ Joined' : slotsFull ? 'স্লট পূর্ণ' : `⚡ JOIN NOW — ৳${tournament.entryFee}`}
+          {expired ? t('expired') : joined ? '✅ ' + t('joined') : slotsFull ? t('slotsFull') : `⚡ ${t('joinNow')} — ৳${tournament.entryFee}`}
         </button>
       </div>
 
@@ -167,7 +169,7 @@ export default function MatchRulesPage() {
             color: tab === 'rules' ? '#fff' : '#b8bcc8',
           }}
         >
-          📋 RULES
+          📋 {t('matchRules')}
         </button>
         <button
           onClick={() => setTab('players')}
@@ -178,13 +180,13 @@ export default function MatchRulesPage() {
             color: tab === 'players' ? '#fff' : '#b8bcc8',
           }}
         >
-          👥 PLAYERS ({players.length})
+          👥 {t('players')} ({players.length})
         </button>
       </div>
 
       {tab === 'rules' ? (
         <>
-          <h3 style={{ fontSize: 15, marginBottom: 12 }}>📋 MATCH RULES</h3>
+          <h3 style={{ fontSize: 15, marginBottom: 12 }}>📋 {t('matchRules')}</h3>
           <div className="rules-list">
             {rules.map((rule, i) => (
               <div className="rule-row" key={i}>
@@ -195,12 +197,12 @@ export default function MatchRulesPage() {
         </>
       ) : (
         <>
-          <h3 style={{ fontSize: 15, marginBottom: 12 }}>👥 যারা জয়েন করেছেন</h3>
+          <h3 style={{ fontSize: 15, marginBottom: 12 }}>👥 {t('joinedPlayers')}</h3>
           {players.length === 0 ? (
             <div className="empty">
               <div className="glyph">◇</div>
-              <h3>এখনো কেউ জয়েন করেননি</h3>
-              <p>প্রথম হয়ে যান!</p>
+              <h3>{t('noOneJoinedYet')}</h3>
+              <p>{t('beTheFirst')}</p>
             </div>
           ) : (
             <div className="prize-list">
@@ -208,7 +210,7 @@ export default function MatchRulesPage() {
                 <div className="prize-row" key={p.id}>
                   <span className="prize-icon">{i + 1}.</span>
                   <span className="prize-label">
-                    🎮 {p.ign || 'অজানা'}
+                    🎮 {p.ign || t('unknown')}
                     {p.teammateIgn ? ` + ${p.teammateIgn}` : ''}
                   </span>
                 </div>
@@ -230,6 +232,7 @@ export default function MatchRulesPage() {
 }
 
 function BackButton({ onClick }) {
+  const { t } = useLanguage()
   return (
     <button
       onClick={onClick}
@@ -240,7 +243,7 @@ function BackButton({ onClick }) {
         cursor: 'pointer', marginBottom: 14,
       }}
     >
-      ← ফিরে যান
+      ← {t('goBack')}
     </button>
   )
 }

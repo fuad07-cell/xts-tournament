@@ -6,6 +6,7 @@ import {
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { ensureFreshPeriodStats } from '../leaderboardStats'
+import { useLanguage } from '../context/LanguageContext'
 
 // Maps each ranking category to its weekly / monthly / all-time Firestore field.
 // All values live directly on the user doc (kept in sync by Cloud Functions),
@@ -18,16 +19,16 @@ const FIELD_MAP = {
 }
 
 const CATEGORIES = [
-  { key: 'wins', label: 'Wins', icon: '🏆', accent: 'gold' },
-  { key: 'kills', label: 'Kills', icon: '☠️', accent: 'red' },
-  { key: 'matches', label: 'Matches', icon: '🎮', accent: 'blue' },
-  { key: 'earnings', label: 'Earnings', icon: '💰', accent: 'mint' },
+  { key: 'wins', icon: '🏆', accent: 'gold' },
+  { key: 'kills', icon: '☠️', accent: 'red' },
+  { key: 'matches', icon: '🎮', accent: 'blue' },
+  { key: 'earnings', icon: '💰', accent: 'mint' },
 ]
 
 const PERIODS = [
-  { key: 'weekly', label: 'Weekly' },
-  { key: 'monthly', label: 'Monthly' },
-  { key: 'allTime', label: 'All Time' },
+  { key: 'weekly' },
+  { key: 'monthly' },
+  { key: 'allTime' },
 ]
 
 const LIST_SIZE = 50
@@ -41,8 +42,8 @@ function formatValue(category, value) {
   return fmt(value)
 }
 
-// Countdown label to the next automatic reset, purely informational.
-function nextResetLabel(period) {
+// Countdown days to the next automatic reset, purely informational.
+function nextResetDays(period) {
   if (period === 'allTime') return null
   const now = new Date()
   let target
@@ -57,7 +58,7 @@ function nextResetLabel(period) {
   }
   const ms = target - now
   const days = Math.max(1, Math.ceil(ms / 86400000))
-  return `Resets in ${days}d`
+  return days
 }
 
 function initials(name) {
@@ -66,6 +67,7 @@ function initials(name) {
 
 export default function Leaderboard() {
   const { user, profile } = useAuth()
+  const { t } = useLanguage()
   const uid = user?.uid || profile?.id || profile?.uid || null
 
   const [category, setCategory] = useState('wins')
@@ -122,13 +124,13 @@ export default function Leaderboard() {
 
   const top3 = players.slice(0, 3)
   const rest = players.slice(3)
-  const resetLabel = useMemo(() => nextResetLabel(period), [period])
+  const resetDays = useMemo(() => nextResetDays(period), [period])
 
   return (
     <div className="screen lb-screen">
       <div className="section-title">
-        <h2>Leaderboard</h2>
-        <span>Top players ranked</span>
+        <h2>{t('leaderboard')}</h2>
+        <span>{t('topPlayersRanked')}</span>
       </div>
 
       <div className="lb-period-tabs">
@@ -138,11 +140,11 @@ export default function Leaderboard() {
             className={'lb-period-tab' + (period === p.key ? ' active' : '')}
             onClick={() => setPeriod(p.key)}
           >
-            {p.label}
+            {t(p.key)}
           </div>
         ))}
       </div>
-      {resetLabel && <div className="lb-reset-note">{resetLabel}</div>}
+      {resetDays && <div className="lb-reset-note">{t('resetsIn')} {resetDays}{t('days')}</div>}
 
       <div className="lb-cat-tabs">
         {CATEGORIES.map((c) => (
@@ -151,7 +153,7 @@ export default function Leaderboard() {
             className={'lb-cat-tab lb-accent-' + c.accent + (category === c.key ? ' active' : '')}
             onClick={() => setCategory(c.key)}
           >
-            <span className="lb-cat-icon">{c.icon}</span>{c.label}
+            <span className="lb-cat-icon">{c.icon}</span>{t(c.key)}
           </div>
         ))}
       </div>
@@ -167,8 +169,8 @@ export default function Leaderboard() {
       {!loading && players.length === 0 && (
         <div className="empty">
           <div className="glyph">◆</div>
-          <h3>No rankings yet</h3>
-          <p>Once matches are played, player rankings will show up here.</p>
+          <h3>{t('noRankings')}</h3>
+          <p>{t('noRankingsDesc')}</p>
         </div>
       )}
 
@@ -224,6 +226,7 @@ function StatsLine({ p }) {
 }
 
 function PodiumCard({ rank, p, category, rankKey, pos }) {
+  const { t } = useLanguage()
   const cls = rank === 1 ? 'gold' : rank === 2 ? 'silver' : 'bronze'
   if (!p) return <div className={'lb-podium-card ' + cls + ' ' + pos + ' empty-slot'} />
   const value = p[FIELD_MAP[category][rankKey.split('_')[1]]] ?? p[category]
@@ -234,7 +237,7 @@ function PodiumCard({ rank, p, category, rankKey, pos }) {
       <div className="lb-podium-avatar">
         {p.photoURL ? <img src={p.photoURL} alt="" /> : initials(p.username)}
       </div>
-      <div className="lb-podium-name">{p.username || 'Player'}</div>
+      <div className="lb-podium-name">{p.username || t('player')}</div>
       <div className="lb-podium-value">{formatValue(category, value)}</div>
       <StatsLine p={p} />
     </div>
@@ -242,6 +245,7 @@ function PodiumCard({ rank, p, category, rankKey, pos }) {
 }
 
 function PlayerRow({ rank, p, category, rankKey, isMe, pinned }) {
+  const { t } = useLanguage()
   const value = p[FIELD_MAP[category][rankKey.split('_')[1]]] ?? p[category]
   return (
     <div className={'lb-row' + (isMe ? ' me' : '') + (pinned ? ' pinned' : '')}>
@@ -252,8 +256,8 @@ function PlayerRow({ rank, p, category, rankKey, isMe, pinned }) {
         </div>
         <div className="lb-row-id">
           <div className="lb-row-name">
-            {p.username || 'Player'}
-            {isMe && <span className="lb-you-badge">You</span>}
+            {p.username || t('player')}
+            {isMe && <span className="lb-you-badge">{t('you')}</span>}
           </div>
           <StatsLine p={p} />
         </div>

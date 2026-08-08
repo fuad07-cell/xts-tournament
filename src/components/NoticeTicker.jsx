@@ -1,30 +1,31 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useLanguage } from '../context/LanguageContext'
 import './NoticeTicker.css'
 
 // ---------------------------------------------------------------------------
 // NoticeTicker — premium glass notice bar shown below the header on Home.
 // Continuous TV-news-style ticker: all notices scroll right-to-left in an
 // infinite seamless loop. Pauses on hover, resumes smoothly.
-// Edit NOTICES below to add / remove / re-link items.
 // ---------------------------------------------------------------------------
-
-const NOTICES = [
-  { text: '⏳ Withdraw সর্বোচ্চ ১২ ঘণ্টার ভিতরে পেয়ে যাবেন — নিশ্চিন্তে খেলুন।', link: '/transactions' },
-  { text: '🆔 ম্যাচে জয়েন করার সময় আপনার সঠিক Game ID ব্যবহার করুন।', link: '/matches' },
-  { text: '🎥 Replay Record ON রাখা বাধ্যতামূলক — অভিযোগ এলে ভিডিও লাগবে।', link: '/matches' },
-  { text: '📣 প্রতিদিন নতুন টুর্নামেন্ট যোগ হচ্ছে — এখনই লিডারবোর্ড দেখুন।', link: '/leaderboard' },
-]
 
 // Target scroll speed in px/s (40–60 range for comfortable reading).
 // This is NOT a JS animation loop — it only calculates a CSS duration once.
 const TICKER_PX_PER_SEC = 50
 
 export default function NoticeTicker() {
+  const { t } = useLanguage()
   const [paused, setPaused] = useState(false)
   const trackRef = useRef(null)
   const [duration, setDuration] = useState(0)
   const navigate = useNavigate()
+
+  const NOTICES = [
+    { text: t('tickerNotice1'), link: '/transactions' },
+    { text: t('tickerNotice2'), link: '/matches' },
+    { text: t('tickerNotice3'), link: '/matches' },
+    { text: t('tickerNotice4'), link: '/leaderboard' },
+  ]
 
   // Measure the first-half width (original notices) and derive animation
   // duration so the CSS keyframe scrolls at ~TICKER_PX_PER_SEC.

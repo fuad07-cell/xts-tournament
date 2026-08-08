@@ -1,8 +1,11 @@
 import { TELEGRAM_SUPPORT_LINK, YOUTUBE_HOWTO_LINK } from '../constants/links'
+import { useLanguage } from '../context/LanguageContext'
 
 // The two "poster" cards at the top of Home — Telegram Support & YouTube
 // How-to-Play — each opens the configured link in a new tab.
 export default function InfoBanners() {
+  const { t } = useLanguage()
+
   return (
     <div className="info-banners">
       <a
@@ -17,8 +20,8 @@ export default function InfoBanners() {
           </svg>
         </span>
         <div>
-          <div className="info-banner-title">Telegram Support</div>
-          <div className="info-banner-sub">সরাসরি চ্যাট করুন</div>
+          <div className="info-banner-title">{t('telegramSupportTitle')}</div>
+          <div className="info-banner-sub">{t('chatDirectly')}</div>
         </div>
       </a>
 
@@ -34,8 +37,8 @@ export default function InfoBanners() {
           </svg>
         </span>
         <div>
-          <div className="info-banner-title">How to Play</div>
-          <div className="info-banner-sub">YouTube-এ ভিডিও দেখুন</div>
+          <div className="info-banner-title">{t('howToPlay')}</div>
+          <div className="info-banner-sub">{t('watchOnYoutube')}</div>
         </div>
       </a>
     </div>
