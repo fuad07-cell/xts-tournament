@@ -54,6 +54,11 @@ export default function Notifications() {
 
   function handleOpen(n) {
     if (!n.read) markAsRead(n.id)
+    const route = n.route || n.deepLink || n.data?.route
+    if (route) {
+      navigate(route)
+      return
+    }
     if (n.type === 'match_result' || n.type === 'room_ready' || n.type === 'match_cancelled' || n.type === 'match_reminder') {
       navigate('/transactions') // best-effort — matches app's existing "My Matches" style destination
     }

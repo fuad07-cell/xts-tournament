@@ -18,7 +18,7 @@ const TITLE_KEYS = {
 
 // A single Toast card — dark + red-border style,
 // icon blinks/pulses (CSS animation).
-export default function Toast({ id, type = 'error', title, message, duration = 5000, onClose }) {
+export default function Toast({ id, type = 'error', title, message, duration = 5000, onClose, onClick }) {
   const { t } = useLanguage()
 
   useEffect(() => {
@@ -28,7 +28,12 @@ export default function Toast({ id, type = 'error', title, message, duration = 5
   }, [id, duration, onClose])
 
   return (
-    <div className={`toast toast-${type}`} role="alert">
+    <div
+      className={`toast toast-${type}`}
+      role="alert"
+      onClick={onClick ? () => { onClick(); onClose(id) } : undefined}
+      style={onClick ? { cursor: 'pointer' } : undefined}
+    >
       <div className="toast-icon-wrap">
         <span className="toast-icon">{ICONS[type] || ICONS.error}</span>
       </div>
@@ -36,7 +41,7 @@ export default function Toast({ id, type = 'error', title, message, duration = 5
       <div className="toast-content">
         <div className="toast-title-row">
           <span className="toast-title">{title || t(TITLE_KEYS[type] || 'toastError')}</span>
-          <button className="toast-close" onClick={() => onClose(id)} aria-label={t('toastClose')}>✕</button>
+          <button className="toast-close" onClick={(e) => { e.stopPropagation(); onClose(id) }} aria-label={t('toastClose')}>✕</button>
         </div>
         <div className="toast-message">{message}</div>
       </div>

@@ -18,8 +18,17 @@ import { useEffect, useState } from 'react'
 import Admin from './pages/Admin'
 import { ToastProvider } from './components/ToastContext'
 import { ConfirmProvider } from './components/ConfirmContext'
+import { usePushNotifications } from './hooks/usePushNotifications'
 
 // লিংক এডিট করতে হলে src/constants/links.js এ যান
+
+// Needs to render inside both <ToastProvider> (foreground push -> toast)
+// and the Router (background push tap -> navigate), so it can't just be
+// called at the top of App() itself.
+function PushNotificationsBridge() {
+  usePushNotifications()
+  return null
+}
 
 function AppShell({ children }) {
   return (
@@ -43,6 +52,7 @@ export default function App() {
   return (
     <ConfirmProvider>
     <ToastProvider>
+    <PushNotificationsBridge />
     {!booted && <StartupSequence onDone={() => setBooted(true)} />}
     {booted && (
     <Routes>

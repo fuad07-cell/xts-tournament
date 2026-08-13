@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
+import { getMessaging, isSupported } from 'firebase/messaging'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -15,3 +16,15 @@ export const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 export const db = getFirestore(app)
 export const googleProvider = new GoogleAuthProvider()
+
+// Web Push (FCM) — lazily resolved because getMessaging() throws in
+// environments without Notification/ServiceWorker support (older Safari,
+// in-app webviews like Median's, SSR, etc). Callers must await this
+// instead of importing a `messaging` singleton directly.
+let messagingPromise = null
+export function getMessagingInstance() {
+  if (!messagingPromise) {
+    messagingPromise = isSupported().then((ok) => (ok ? getMessaging(app) : null))
+  }
+  return messagingPromise
+}

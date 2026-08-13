@@ -20,7 +20,7 @@ export function ToastProvider({ children }) {
 
   const showToast = useCallback((type, message, opts = {}) => {
     const id = ++counter.current
-    setToasts((prev) => [...prev, { id, type, message, title: opts.title, duration: opts.duration ?? 5000 }])
+    setToasts((prev) => [...prev, { id, type, message, title: opts.title, duration: opts.duration ?? 5000, onClick: opts.onClick }])
     return id
   }, [])
 

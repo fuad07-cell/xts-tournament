@@ -1,5 +1,6 @@
 import { collection, addDoc, doc, writeBatch, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
+import { triggerPush } from './pushTrigger'
 
 // Single place that knows the `notifications` doc shape. Every admin
 // action that should notify a user goes through this — keeps the schema
@@ -9,7 +10,7 @@ import { db } from '../firebase'
 export async function createNotification(userId, { type, title, body, data = {} }) {
   if (!userId) return
   try {
-    await addDoc(collection(db, 'notifications'), {
+    const ref = await addDoc(collection(db, 'notifications'), {
       userId,
       type,
       title,
@@ -18,6 +19,7 @@ export async function createNotification(userId, { type, title, body, data = {} 
       read: false,
       createdAt: serverTimestamp(),
     })
+    triggerPush(ref.id) // fire-and-forget — see pushTrigger.js
   } catch (err) {
     // Best-effort — a notification failing to write must never block or
     // fail the admin action that triggered it (balance/result already
@@ -33,8 +35,10 @@ export async function createNotificationsBatch(userIds, { type, title, body, dat
   const ids = [...new Set(userIds)].filter(Boolean)
   if (!ids.length) return
   const batch = writeBatch(db)
+  const notificationIds = []
   ids.forEach((userId) => {
     const ref = doc(collection(db, 'notifications'))
+    notificationIds.push(ref.id)
     batch.set(ref, {
       userId,
       type,
@@ -47,6 +51,7 @@ export async function createNotificationsBatch(userIds, { type, title, body, dat
   })
   try {
     await batch.commit()
+    triggerPush(notificationIds) // fire-and-forget — see pushTrigger.js
   } catch (err) {
     console.warn('notification batch create failed (non-blocking):', err)
   }
