@@ -194,7 +194,7 @@ export default {
   inviteShareText: 'আমার রেফারেল কোড দিয়ে জয়েন করুন — দুইজনেই ৳৫ পাবেন! Code: __code__',
 
   // ── Developer Modal ──
-  devInfo: 'XTS Tournament ডেভেলপ করা হয়েছে স্বাধীনভাবে।',
+  devInfo: 'শুধুমাত্র নিজের নামে টুর্নামেন্ট অ্যাপ বানাতে চাইলে মেসেজ দিন। অন্য কোনো কারণে মেসেজ দেবেন না, দয়া করে।',
   appVersion: 'অ্যাপ ভার্সন',
   contact: 'যোগাযোগ',
 
@@ -325,6 +325,20 @@ export default {
   latestFirst: 'তারিখ — পরের দিকে',
   highestPrize: 'সর্বোচ্চ পুরস্কার',
   lowestEntryFee: 'সর্বনিম্ন প্রবেশ ফি',
+  matchTab: 'ম্যাচ',
+  resultsTab: 'ফলাফল',
+  resultsLoading: 'লোড হচ্ছে...',
+  noResultsFound: 'গত ২৪ ঘণ্টায় কোনো ফলাফল নেই',
+  resultsWillAppear: 'Approved ম্যাচ ফলাফল এখানে ২৪ ঘণ্টা থাকবে, তারপর স্বয়ংক্রিয়ভাবে সরে যাবে।',
+  positionLabel: 'Position',
+  killsLabel: 'Kills',
+  wonLabel: 'জিতেছে',
+  lostLabel: 'হেরেছে',
+  prizeWonLabel: 'Prize',
+  timeAgoJustNow: 'এইমাত্র',
+  timeAgoMinutes: '__n__ মিনিট আগে',
+  timeAgoHours: '__n__ ঘণ্টা আগে',
+
 
   // ── Match Rules Page ──
   readRules: 'নিয়ম অবশ্যই পড়ে নিন ✅',

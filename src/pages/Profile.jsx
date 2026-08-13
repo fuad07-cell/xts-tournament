@@ -6,8 +6,188 @@ import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/ToastContext'
 import { useLanguage } from '../context/LanguageContext'
+import { UserAvatar, AvatarEditorModal, ensureDefaultAvatar } from '../components/AvatarSystem'
 
 const DIAL_CODES = { bKash: '*247#', Nagad: '*167#', Rocket: '*322#' }
+
+// ---------------------------------------------------------------------------
+// Fixed App-Developer profile image. This is intentionally NOT part of the
+// UserAvatar system — it's a single static asset for the "App Developer"
+// modal, not per-user data. Drop the real photo at the path below (inside
+// the project's /public folder) and it appears automatically, no code
+// change needed. Until then a neutral placeholder (same size/border/glow)
+// keeps the modal layout intact.
+// ---------------------------------------------------------------------------
+const DEVELOPER_IMAGE_PATH = '/developer-profile.png'
+const DEVELOPER_TELEGRAM_LINK = 'https://t.me/Obit0_uchiha_8'
+
+function DeveloperModal({ onClose }) {
+  const { t } = useLanguage()
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [onClose])
+
+  return (
+    <div className="dev-modal-overlay" onClick={onClose}>
+      <div className="dev-modal-card" onClick={(e) => e.stopPropagation()}>
+        <button className="dev-modal-close" onClick={onClose} aria-label="Close">✕</button>
+
+        <h2 className="dev-modal-title">{t('appDeveloper')}</h2>
+        <p className="dev-modal-message">{t('devInfo')}</p>
+
+        <DeveloperProfileImage />
+
+        <div className="dev-modal-role">{t('developerLabel') || 'DEVELOPER'}</div>
+        <div className="dev-modal-name">Obito uchiha</div>
+
+        <a
+          className="dev-modal-telegram-btn"
+          href={DEVELOPER_TELEGRAM_LINK}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+            <path d="M21.5 3.5 2.7 10.9c-.9.36-.9 1.63.02 1.97l4.4 1.6 1.7 5.4c.24.76 1.23.97 1.77.37l2.5-2.75 4.6 3.4c.7.52 1.7.15 1.9-.7l3.6-16.1c.2-.9-.7-1.6-1.62-1.24Z" fill="#fff" />
+          </svg>
+          {t('devTelegramCta') || 'Send message on Telegram'}
+        </a>
+        <div className="dev-modal-handle">@Obit0_uchiha_8</div>
+
+        <div className="sheet-row-static" style={{ marginTop: 20 }}><span>{t('appVersion')}</span><span>1.0.0</span></div>
+       
+      </div>
+
+      <style>{`
+        .dev-modal-overlay{
+          position: fixed; inset: 0; z-index: 80;
+          background: rgba(4,4,8,0.78);
+          display: flex; align-items: center; justify-content: center;
+          padding: 20px;
+          animation: devOverlayFade .22s ease both;
+        }
+        .dev-modal-card{
+          position: relative;
+          width: 100%; max-width: 380px;
+          background: linear-gradient(165deg, #0B0B10 0%, #120D1C 60%, #0B0B10 100%);
+          border: 1px solid rgba(139,92,246,0.28);
+          border-radius: 26px;
+          padding: 30px 22px 24px;
+          text-align: center;
+          box-shadow:
+            0 0 0 1px rgba(255,255,255,0.03) inset,
+            0 24px 60px -12px rgba(0,0,0,0.65),
+            0 0 42px -10px rgba(139,92,246,0.4);
+          animation: devCardIn .32s cubic-bezier(.2,.8,.2,1) both;
+        }
+        .dev-modal-close{
+          position: absolute; top: 14px; right: 14px;
+          width: 32px; height: 32px; border-radius: 999px;
+          background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+          color: #C6CBD8; font-size: 14px; cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          transition: background .15s, transform .15s;
+        }
+        .dev-modal-close:hover{ background: rgba(255,255,255,0.12); }
+        .dev-modal-close:active{ transform: scale(0.92); }
+        .dev-modal-title{
+          font-family: 'Rajdhani', sans-serif;
+          font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 8px;
+        }
+        .dev-modal-message{
+          font-size: 13px; line-height: 1.55; color: #9AA3B5;
+          max-width: 300px; margin: 0 auto 18px;
+        }
+        .dev-modal-role{
+          font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+          color: #8892A6; margin-top: 16px; margin-bottom: 4px;
+        }
+        .dev-modal-name{
+          font-size: clamp(16px, 5.5vw, 20px); font-weight: 800; color: #fff;
+          margin-bottom: 20px; overflow-wrap: anywhere;
+        }
+        .dev-modal-telegram-btn{
+          display: flex; align-items: center; justify-content: center; gap: 10px;
+          width: 100%; padding: 14px 0; border-radius: 14px;
+          background: linear-gradient(135deg, #1EA1E8, #229ED9);
+          color: #fff; font-size: 14.5px; font-weight: 700;
+          text-decoration: none;
+          box-shadow:
+            0 0 0 1px rgba(255,255,255,0.08) inset,
+            0 10px 26px -8px rgba(34,158,217,0.6),
+            0 0 30px -8px rgba(255,255,255,0.25);
+          transition: transform .15s ease, box-shadow .2s ease;
+        }
+        .dev-modal-telegram-btn:hover{
+          transform: translateY(-1px);
+          box-shadow:
+            0 0 0 1px rgba(255,255,255,0.12) inset,
+            0 12px 30px -8px rgba(34,158,217,0.75),
+            0 0 38px -6px rgba(255,255,255,0.35);
+        }
+        .dev-modal-telegram-btn:active{ transform: scale(0.97); }
+        .dev-modal-handle{
+          margin-top: 12px; font-size: 13px; font-weight: 600; color: #4FC3F7;
+        }
+        @keyframes devOverlayFade{ from{ opacity: 0; } to{ opacity: 1; } }
+        @keyframes devCardIn{
+          from{ opacity: 0; transform: scale(0.94) translateY(6px); }
+          to{ opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+function DeveloperProfileImage() {
+  const [failed, setFailed] = useState(false)
+  return (
+    <div className="dev-profile-img-wrap">
+      {!failed ? (
+        <img
+          className="dev-profile-img"
+          src={DEVELOPER_IMAGE_PATH}
+          alt="App Developer"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="dev-profile-img dev-profile-img-placeholder" role="img" aria-label="App Developer">
+          <svg width="42%" height="42%" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.6" />
+            <path d="M4 20c0-3.6 3.6-6 8-6s8 2.4 8 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+          </svg>
+        </div>
+      )}
+      <style>{`
+        .dev-profile-img-wrap{
+          width: 128px; height: 128px; max-width: 40vw; max-height: 40vw;
+          margin: 16px auto 14px; border-radius: 22px; padding: 3px;
+          background: linear-gradient(135deg, #4F46E5, #A855F7);
+          animation: devImgGlow 2.6s ease-in-out infinite;
+        }
+        .dev-profile-img{
+          width: 100%; height: 100%; display: block;
+          border-radius: 19px; object-fit: cover; background: #14101f;
+        }
+        .dev-profile-img-placeholder{
+          display: flex; align-items: center; justify-content: center;
+          color: rgba(255,255,255,0.32);
+        }
+        @keyframes devImgGlow{
+          0%, 100% { box-shadow: 0 0 16px -2px rgba(139,92,246,0.55), 0 0 30px -8px rgba(79,70,229,0.4); }
+          50%      { box-shadow: 0 0 24px 0px rgba(168,85,247,0.8), 0 0 42px -4px rgba(79,70,229,0.6); }
+        }
+      `}</style>
+    </div>
+  )
+}
 
 // ---------------------------------------------------------------------------
 // Premium menu icon system — original, hand-drawn line icons (no icon
@@ -24,6 +204,7 @@ const ICON_THEME = {
   admin:       { g1: '#241B5E', g2: '#6C63FF', glow: 'rgba(108,99,255,0.5)',accent: '#E1DFFF' }, // deep indigo shield
   theme:       { g1: '#161244', g2: '#7C89F2', glow: 'rgba(124,137,242,0.5)',accent: '#E5E8FF' }, // midnight moon
   dev:         { g1: '#4A0F63', g2: '#E64FD9', glow: 'rgba(230,79,217,0.5)',accent: '#FBDCFA' }, // futuristic magenta
+  avatarEditor: { g1: '#3B1768', g2: '#22D3EE', glow: 'rgba(34,211,238,0.5)', accent: '#DFFBFF' }, // violet-to-cyan avatar editor
   language:    { g1: '#0B3D3A', g2: '#2CD9C5', glow: 'rgba(44,217,197,0.5)',accent: '#CFFBF5' }, // elegant globe teal
   logout:      { g1: '#5B0F17', g2: '#F4405C', glow: 'rgba(244,64,92,0.55)',accent: '#FFD9DF' }, // premium power red
 }
@@ -86,6 +267,15 @@ const ICON_SVG = {
       <path d="M8.6 6.6L3.9 12l4.7 5.4" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M15.4 6.6l4.7 5.4-4.7 5.4" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" />
       <circle cx="12" cy="12" r="1.25" fill="currentColor" />
+    </svg>
+  ),
+  avatarEditor: (
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M12 3.4a8.6 8.6 0 1 0 0 17.2c1.1 0 1.85-.85 1.85-1.85 0-.5-.2-.9-.5-1.25-.3-.35-.5-.75-.5-1.25 0-1 .85-1.85 1.85-1.85h1.9a3.9 3.9 0 0 0 3.9-3.9c0-3.9-4.05-7.1-8.5-7.1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      <circle cx="8.1" cy="10.3" r="1.15" fill="currentColor" />
+      <circle cx="11.6" cy="7.6" r="1.15" fill="currentColor" />
+      <circle cx="15.4" cy="9.2" r="1.15" fill="currentColor" />
+      <circle cx="8.6" cy="14.6" r="1.15" fill="currentColor" />
     </svg>
   ),
   language: (
@@ -225,6 +415,15 @@ export default function Profile() {
   const [emailCopied, setEmailCopied] = useState(false)
   const { t } = useLanguage()
 
+  // Every user must have an avatar. If this profile doesn't have one yet
+  // (e.g. a pre-existing account from before this feature), silently assign
+  // the default one — no photo fallback exists anymore.
+  useEffect(() => {
+    if (user && profile && !profile?.avatar?.customization) {
+      ensureDefaultAvatar(user.uid, profile).then(refreshProfile)
+    }
+  }, [user, profile])
+
   // Wallet card premium interaction: cursor-reactive spotlight + 3D tilt.
   // Writes CSS custom properties directly via ref (no React re-render on every
   // mousemove), and only ever touches transform/opacity-driven values.
@@ -270,6 +469,7 @@ export default function Profile() {
   const menuItems = [
     { key: 'history', icon: '🕓', color: 'blue', title: t('transactionHistory'), sub: t('transactionHistorySub'), action: () => navigate('/transactions') },
     { key: 'edit', icon: '✎', color: 'purple', title: t('editProfile'), sub: t('editProfileSub'), action: () => setModal('edit') },
+    { key: 'avatarEditor', icon: '🎮', color: 'purple', title: t('editAvatar') || 'Edit Avatar', sub: t('editAvatarSub') || 'Customize your gaming avatar', action: () => setModal('avatarEditor') },
     { key: 'invite', icon: '👥', color: 'green', title: t('inviteFriends'), sub: t('inviteFriendsSub'), action: () => navigate('/invite') },
     { key: 'leaderboard', icon: '🏆', color: 'orange', title: t('leaderboardMenu'), sub: t('leaderboardMenuSub'), action: () => navigate('/leaderboard') },
     { key: 'payment', icon: '💳', color: 'blue', title: t('paymentSettings'), sub: t('paymentSettingsSub'), action: () => setModal('payment'), adminOnly: true },
@@ -291,18 +491,21 @@ export default function Profile() {
       )}
 
       <div className="profile-head-v2">
-        <div className="avatar-ring">
-          {profile?.avatarUrl ? (
-            <img
-              src={profile.avatarUrl}
-              alt=""
-              className="profile-avatar-v2"
-              style={{ objectFit: 'cover', width: '100%', height: '100%', borderRadius: '50%' }}
-            />
-          ) : (
-            <div className="profile-avatar-v2">{(profile?.username || 'X')[0].toUpperCase()}</div>
-          )}
-          <div className="avatar-badge">📷</div>
+        <div style={{ position: 'relative', display: 'inline-flex' }}>
+          <UserAvatar
+            user={profile}
+            size="large"
+            badge={
+              <button
+                className="avatar-badge"
+                onClick={() => setModal('avatarEditor')}
+                style={{ position: 'absolute', bottom: -2, right: -2, border: 'none', cursor: 'pointer' }}
+                aria-label="Edit avatar"
+              >
+                ✎
+              </button>
+            }
+          />
         </div>
         <div className="profile-name-v2">{profile?.username || t('user')}</div>
         <div className="profile-email-row" onClick={copyEmail}>
@@ -425,19 +628,12 @@ export default function Profile() {
       {modal === 'withdraw' && (
         <RequestModal type="withdraw" onClose={() => setModal(null)} userId={user.uid} maxAmount={profile?.winningBalance ?? 0} />
       )}
-      {modal === 'dev' && (
-        <div className="overlay overlay-center" onClick={() => setModal(null)}>
-          <div className="sheet sheet-compact" onClick={(e) => e.stopPropagation()}>
-            <button className="close-btn" onClick={() => setModal(null)}>✕</button>
-            <h2>{t('appDeveloper')}</h2>
-            <div className="meta">{t('devInfo')}</div>
-            <div className="sheet-row-static"><span>{t('appVersion')}</span><span>1.0.0</span></div>
-            <div className="sheet-row-static"><span>{t('contact')}</span><span>crisleo692@gmail.com</span></div>
-          </div>
-        </div>
-      )}
+      {modal === 'dev' && <DeveloperModal onClose={() => setModal(null)} />}
       {modal === 'payment' && <PaymentSettingsModal onClose={() => setModal(null)} />}
       {modal === 'edit' && <EditProfileModal onClose={() => setModal(null)} user={user} profile={profile} refreshProfile={refreshProfile} />}
+      {modal === 'avatarEditor' && (
+        <AvatarEditorModal onClose={() => setModal(null)} user={user} profile={profile} refreshProfile={refreshProfile} />
+      )}
       {modal === 'language' && <LanguageModal onClose={() => setModal(null)} />}
     </div>
   )
@@ -449,31 +645,7 @@ function EditProfileModal({ onClose, user, profile, refreshProfile }) {
   const [username, setUsername] = useState(profile?.username || '')
   const [phoneNumber, setPhoneNumber] = useState(profile?.phoneNumber || '')
   const [freeFireUID, setFreeFireUID] = useState(profile?.freeFireUID || '')
-  const [avatarUrl, setAvatarUrl] = useState(profile?.avatarUrl || '')
-  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [busy, setBusy] = useState(false)
-
-  async function handlePhotoChange(e) {
-    const file = e.target.files[0]
-    if (!file) return
-    setUploadingPhoto(true)
-    try {
-      const formData = new FormData()
-      formData.append('image', file)
-      const apiKey = import.meta.env.VITE_IMGBB_API_KEY
-      const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-        method: 'POST',
-        body: formData,
-      })
-      const data = await res.json()
-      if (!data.success) throw new Error()
-      setAvatarUrl(data.data.url)
-    } catch (err) {
-      showToast('error', t('photoUploadFailed'))
-    } finally {
-      setUploadingPhoto(false)
-    }
-  }
 
   async function save() {
     if (!username.trim()) return showToast('warning', t('nameRequired'))
@@ -483,9 +655,8 @@ function EditProfileModal({ onClose, user, profile, refreshProfile }) {
         username: username.trim(),
         phoneNumber: phoneNumber.trim(),
         freeFireUID: freeFireUID.trim(),
-        avatarUrl: avatarUrl || null,
       })
-      await updateAuthProfile(user, { displayName: username.trim(), photoURL: avatarUrl || null })
+      await updateAuthProfile(user, { displayName: username.trim() })
       await refreshProfile()
       showToast('success', t('profileUpdated'))
       onClose()
@@ -518,36 +689,7 @@ function EditProfileModal({ onClose, user, profile, refreshProfile }) {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
-        <div style={{ position: 'relative', width: 96, height: 96 }}>
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt=""
-              style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover' }}
-            />
-          ) : (
-            <div
-              style={{
-                width: 96, height: 96, borderRadius: '50%',
-                background: 'linear-gradient(135deg, #f97316, #ef4444)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 36, fontWeight: 800, color: '#fff',
-              }}
-            >
-              {(username || 'X')[0].toUpperCase()}
-            </div>
-          )}
-          <label
-            style={{
-              position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: '50%',
-              background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', border: '3px solid #0b0e14', fontSize: 14,
-            }}
-          >
-            {uploadingPhoto ? '…' : '📷'}
-            <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} disabled={uploadingPhoto} />
-          </label>
-        </div>
+        <UserAvatar user={profile} size="large" />
       </div>
 
       <FieldLabel icon="👤" text={t('username')} />

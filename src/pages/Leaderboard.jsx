@@ -7,6 +7,7 @@ import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { ensureFreshPeriodStats } from '../leaderboardStats'
 import { useLanguage } from '../context/LanguageContext'
+import { UserAvatar } from '../components/AvatarSystem'
 
 // Maps each ranking category to its weekly / monthly / all-time Firestore field.
 // All values live directly on the user doc (kept in sync by Cloud Functions),
@@ -59,10 +60,6 @@ function nextResetDays(period) {
   const ms = target - now
   const days = Math.max(1, Math.ceil(ms / 86400000))
   return days
-}
-
-function initials(name) {
-  return (name || '?').trim()[0]?.toUpperCase() || '?'
 }
 
 export default function Leaderboard() {
@@ -234,8 +231,8 @@ function PodiumCard({ rank, p, category, rankKey, pos }) {
     <div className={'lb-podium-card ' + cls + ' ' + pos}>
       {rank === 1 && <div className="lb-crown">👑</div>}
       <div className="lb-podium-rank-badge">#{rank}</div>
-      <div className="lb-podium-avatar">
-        {p.photoURL ? <img src={p.photoURL} alt="" /> : initials(p.username)}
+      <div style={{ marginBottom: 8 }}>
+        <UserAvatar user={p} size={rank === 1 ? 68 : 56} />
       </div>
       <div className="lb-podium-name">{p.username || t('player')}</div>
       <div className="lb-podium-value">{formatValue(category, value)}</div>
@@ -251,9 +248,7 @@ function PlayerRow({ rank, p, category, rankKey, isMe, pinned }) {
     <div className={'lb-row' + (isMe ? ' me' : '') + (pinned ? ' pinned' : '')}>
       <div className="lb-row-left">
         <div className="lb-row-rank">#{rank}</div>
-        <div className="lb-row-avatar">
-          {p.photoURL ? <img src={p.photoURL} alt="" /> : initials(p.username)}
-        </div>
+        <UserAvatar user={p} size={36} />
         <div className="lb-row-id">
           <div className="lb-row-name">
             {p.username || t('player')}

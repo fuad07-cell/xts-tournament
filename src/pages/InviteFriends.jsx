@@ -4,6 +4,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
+import { UserAvatar } from '../components/AvatarSystem'
 
 const REFERRAL_BONUS_AMOUNT = 5
 
@@ -214,7 +215,7 @@ export default function InviteFriends() {
         <div className="invite-history-list">
           {referred.map((r) => (
             <div className="invite-history-row" key={r.id}>
-              <div className="invite-history-avatar">{(r.username || '?').slice(0, 1).toUpperCase()}</div>
+              <UserAvatar user={r} size={36} />
               <div>
                 <div className="invite-history-name">{r.username || t('unknown') || 'Unknown'}</div>
                 <div className="invite-history-date">{formatDate(r.createdAt)}</div>

@@ -3,6 +3,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { db } from '../firebase'
 import { RULES_BY_CATEGORY, DEFAULT_RULES } from '../constants/rules'
 import { useLanguage } from '../context/LanguageContext'
+import { UserAvatar } from './AvatarSystem'
 
 // Combined "RULES / PLAYERS" popup opened from a tournament card — two
 // pill tabs at the top like the reference design. Rules come from the
@@ -87,8 +88,9 @@ export default function MatchInfoModal({ tournament: t, categoryKey, onClose }) 
               ) : (
                 <div className="prize-list">
                   {players.map((p, i) => (
-                    <div className="prize-row" key={p.id}>
+                    <div className="prize-row" key={p.id} style={{ alignItems: 'center', gap: 10 }}>
                       <span className="prize-icon">{i + 1}.</span>
+                      <UserAvatar userId={p.userId} size={32} />
                       <span className="prize-label">
                         🎮 {p.ign || tr('unknown')}
                         {p.teammateIgn ? ` + ${p.teammateIgn}` : ''}

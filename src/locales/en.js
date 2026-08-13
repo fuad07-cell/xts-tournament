@@ -194,7 +194,7 @@ export default {
   inviteShareText: 'Join using my referral code — we both get ৳5! Code: __code__',
 
   // ── Developer Modal ──
-  devInfo: 'XTS Tournament is independently developed.',
+  devInfo: 'Only message me if you want your own tournament app built. Please don\'t message for any other reason.',
   appVersion: 'App Version',
   contact: 'Contact',
 
@@ -325,6 +325,20 @@ export default {
   latestFirst: 'Date — Latest First',
   highestPrize: 'Highest Prize',
   lowestEntryFee: 'Lowest Entry Fee',
+  matchTab: 'Match',
+  resultsTab: 'Results',
+  resultsLoading: 'Loading...',
+  noResultsFound: 'No results in the last 24 hours',
+  resultsWillAppear: 'Approved match results stay here for 24 hours, then disappear automatically.',
+  positionLabel: 'Position',
+  killsLabel: 'Kills',
+  wonLabel: 'Won',
+  lostLabel: 'Lost',
+  prizeWonLabel: 'Prize',
+  timeAgoJustNow: 'Just now',
+  timeAgoMinutes: '__n__m ago',
+  timeAgoHours: '__n__h ago',
+
 
   // ── Match Rules Page ──
   readRules: 'Read the rules carefully ✅',

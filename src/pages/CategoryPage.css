@@ -333,6 +333,51 @@
   border-color: rgba(34, 197, 94, 0.4);
 }
 
+/* ── MATCH / RESULTS Tabs ── */
+.mode-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.mode-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #4A5270;
+  font-family: "Rajdhani", sans-serif;
+}
+
+.mode-tab:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,0.15);
+  color: #C8D0E0;
+}
+
+.mode-tab.active {
+  background: rgba(46,155,255,0.12);
+  border-color: rgba(46,155,255,0.5);
+  color: #2E9BFF;
+  box-shadow: 0 4px 20px rgba(46,155,255,0.15), 0 0 0 1px rgba(46,155,255,0.2);
+}
+
+.result-card .tour-status-badge-inline.completed {
+  background: rgba(61,220,132,0.15);
+  border-color: rgba(61,220,132,0.4);
+  color: #3DDC84;
+}
+
 @media (max-width: 480px) {
   .cp-hero {
     height: 160px;
@@ -349,6 +394,13 @@
   }
   .cp-sort-select {
     width: 100%;
+  }
+  .mode-tabs {
+    gap: 8px;
+  }
+  .mode-tab {
+    font-size: 12px;
+    padding: 8px 14px;
   }
 }
 

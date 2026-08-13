@@ -15,9 +15,11 @@ import {
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useAuth, MAIN_ADMIN_UID } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import { CATEGORIES } from '../constants/categories'
 import { recordMatchResult } from '../leaderboardStats'
 import { logTransaction } from '../utils/transactions'
+import { computeExpiresAt } from '../utils/resultVisibility'
 // ASSUMPTION (verify this path): inferred from notify.js and transactions.js
 // both importing '../firebase' at the same relative depth, i.e. both living
 // in src/utils/. If your notify.js is elsewhere, just fix this one line.
@@ -27,6 +29,7 @@ import { useConfirm } from '../components/ConfirmContext'
 
 export default function Admin() {
   const { user, isAdmin, isMainAdmin } = useAuth()
+  const { t } = useLanguage()
   const { showToast } = useToast()
   const confirmAction = useConfirm()
   const [section, setSection] = useState('wallet') // 'wallet' | 'tournaments' | 'results' | 'users'
@@ -53,7 +56,7 @@ export default function Admin() {
           const entries = await Promise.all(
             missing.map(async (uid) => {
               const snap = await getDoc(doc(db, 'users', uid))
-              return [uid, snap.exists() ? snap.data() : { username: 'অজানা', email: '-' }]
+              return [uid, snap.exists() ? snap.data() : { username: t('unknown'), email: '-' }]
             })
           )
           setUserCache((prev) => ({ ...prev, ...Object.fromEntries(entries) }))
@@ -78,17 +81,21 @@ export default function Admin() {
         const winning = u.winningBalance || 0
 
         let update
+        let referrerRef = null
+        let referrerSnap = null
 
         if (r.type === 'add') {
           // Add Money সবসময় Deposit-এ যোগ হয়
-          // (রেফারেল বোনাস আর এখানে দেওয়া হয় না — এটা এখন স্বয়ংক্রিয়ভাবে
-          // referred user-এর *প্রথম booking* সম্পন্ন হলে দেওয়া হয়, দেখুন
-          // src/hooks/useJoinMatch.js। এতে Profile.jsx-এর Invite Friends
-          // sheet-এ দেওয়া প্রতিশ্রুতির সাথে মিলে যায়, এবং একই referral
-          // একাধিকবার পে হওয়ার ঝুঁকিও থাকে না।)
           update = {
             walletBalance: currentBalance + r.amount,
             depositBalance: deposit + r.amount,
+          }
+
+          // Referral বোনাস — শুধু এই user-এর *প্রথম* approved deposit-এই একবার দেওয়া হবে
+          if (u.referredBy && !u.firstDepositBonusGiven) {
+            referrerRef = doc(db, 'users', u.referredBy)
+            referrerSnap = await tx.get(referrerRef) // transaction-এ সব read আগে, write পরে করতে হয়
+            update.firstDepositBonusGiven = true
           }
         } else {
           // Withdraw শুধু Winning balance থেকেই কাটা যায়
@@ -101,6 +108,15 @@ export default function Admin() {
 
         tx.update(userRef, update)
         tx.update(reqRef, { status: 'approved', approvedAt: serverTimestamp() })
+
+        if (referrerRef && referrerSnap && referrerSnap.exists()) {
+          const rd = referrerSnap.data()
+          tx.update(referrerRef, {
+            walletBalance: (rd.walletBalance || 0) + 5,
+            winningBalance: (rd.winningBalance || 0) + 5,
+            referralEarnings: (rd.referralEarnings || 0) + 5,
+          })
+        }
       })
 
       // Log it into the unified transaction history — best-effort, shouldn't
@@ -161,7 +177,7 @@ export default function Admin() {
     }
   }
 
-  if (!user) return <div className="loading-screen">লোড হচ্ছে...</div>
+  if (!user) return <div className="loading-screen">{t('loading')}</div>
   if (!isAdmin) {
     return (
       <div className="empty" style={{ marginTop: 80 }}>
@@ -217,7 +233,7 @@ export default function Admin() {
               <div key={r.id} className="admin-card">
                 <div className="admin-card-top">
                   <div>
-                    <div className="admin-user">{u ? u.username : 'লোড হচ্ছে...'}</div>
+                    <div className="admin-user">{u ? u.username : t('loading')}</div>
                     <div className="admin-email">{u ? u.email : ''}</div>
                   </div>
                   <div className={'admin-type ' + r.type}>{r.type === 'add' ? '+ Add Money' : '− Withdraw'}</div>
@@ -245,6 +261,7 @@ export default function Admin() {
 
 function ResultsPanel() {
   const { showToast } = useToast()
+  const { t } = useLanguage()
   const confirmAction = useConfirm()
   const [results, setResults] = useState([])
   const [userCache, setUserCache] = useState({})
@@ -265,7 +282,7 @@ function ResultsPanel() {
           const entries = await Promise.all(
             missing.map(async (uid) => {
               const snap = await getDoc(doc(db, 'users', uid))
-              return [uid, snap.exists() ? snap.data() : { username: 'অজানা', email: '-' }]
+              return [uid, snap.exists() ? snap.data() : { username: t('unknown'), email: '-' }]
             })
           )
           setUserCache((prev) => ({ ...prev, ...Object.fromEntries(entries) }))
@@ -349,6 +366,13 @@ function ResultsPanel() {
           isWinner,
           prizeAmount: finalPrize,
           reviewedAt: serverTimestamp(),
+          // Public "Results" tab visibility window — starts counting from
+          // this exact publish moment, not match date/time or anyone's
+          // join time. publishedAt is the sentinel for an accurate audit
+          // trail; expiresAt has to be a concrete Timestamp (not a
+          // sentinel) so CategoryPage.jsx can query `where('expiresAt', '>', now)`.
+          publishedAt: serverTimestamp(),
+          expiresAt: computeExpiresAt(),
         })
         tx.update(entryRef, { status: 'completed' })
         tx.update(userRef, {
@@ -445,7 +469,7 @@ function ResultsPanel() {
           <div key={r.id} className="admin-card">
             <div className="admin-card-top">
               <div>
-                <div className="admin-user">{u ? u.username : 'লোড হচ্ছে...'}</div>
+                <div className="admin-user">{u ? u.username : t('loading')}</div>
                 <div className="admin-email">{u ? u.email : ''}</div>
               </div>
               <div className="admin-type add">{r.title}</div>
@@ -503,6 +527,7 @@ function ResultsPanel() {
 
 function UsersPanel({ isMainAdmin }) {
   const { showToast } = useToast()
+  const { t } = useLanguage()
   const confirmAction = useConfirm()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -609,7 +634,7 @@ function UsersPanel({ isMainAdmin }) {
 
   async function submitRefund(u) {
     const amount = Number(refundAmount)
-    if (!amount || amount <= 0) return showToast('warning', 'সঠিক Amount দিন')
+    if (!amount || amount <= 0) return showToast('warning', t('amountLabel'))
     if (!(await confirmAction(`${u.username || u.email} কে ৳${amount} refund করবেন?`))) return
 
     setBusyUid(u.id)
@@ -665,7 +690,7 @@ function UsersPanel({ isMainAdmin }) {
         />
       </div>
 
-      {loading && <div className="meta">লোড হচ্ছে...</div>}
+      {loading && <div className="meta">{t('loading')}</div>}
       {!loading && filtered.length === 0 && (
         <div className="empty">
           <div className="glyph">◇</div>
@@ -678,7 +703,7 @@ function UsersPanel({ isMainAdmin }) {
           <div className="admin-card-top">
             <div>
               <div className="admin-user">
-                {u.username || 'অজানা'}
+                {u.username || t('unknown')}
                 {u.id === MAIN_ADMIN_UID && (
                   <span style={{ marginLeft: 8, fontSize: 10.5, padding: '2px 8px', borderRadius: 999, background: 'rgba(96,165,250,0.15)', color: '#60a5fa', fontWeight: 700, letterSpacing: 0.4 }}>
                     MAIN ADMIN
@@ -762,6 +787,7 @@ function UsersPanel({ isMainAdmin }) {
 
 function TournamentsPanel() {
   const { showToast } = useToast()
+  const { t } = useLanguage()
   const [tournaments, setTournaments] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
@@ -795,7 +821,7 @@ function TournamentsPanel() {
 
   async function createTournament() {
     if (!form.title || !form.entryFee || !form.prizePool || !form.slots) {
-      return showToast('warning', 'সব ঘর পূরণ করুন')
+      return showToast('warning', t('fillAllFields'))
     }
     setBusy(true)
     try {
@@ -892,7 +918,7 @@ function TournamentsPanel() {
 
       showToast('success', 'Room ID / Password সেভ হয়েছে')
     } catch (err) {
-      showToast('error', 'সেভ করা যায়নি')
+      showToast('error', t('saveFailed'))
     }
   }
 
@@ -919,7 +945,7 @@ function TournamentsPanel() {
 
       showToast('success', 'আপডেট হয়েছে')
     } catch (err) {
-      showToast('error', 'আপডেট করা যায়নি')
+      showToast('error', t('saveFailed'))
     }
   }
 
